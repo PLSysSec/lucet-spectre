@@ -33,7 +33,31 @@ out/test.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 out/test.asm: out/test.o
 	objdump -d out/test.o $< > $@
 
-build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm
+out/test_align.o: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
+	/home/shr/Code/lucet-spectre/target/debug/lucetc \
+		--bindings /home/shr/Code/lucet-spectre/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--emit obj \
+		--enable-spectre-guards \
+		--spectre-branch-alignment "31" \
+		out/test.wasm -o $@
+
+out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
+	/home/shr/Code/lucet-spectre/target/debug/lucetc \
+		--bindings /home/shr/Code/lucet-spectre/lucet-wasi/bindings.json \
+		--guard-size "4GiB" \
+		--min-reserved-size "4GiB" \
+		--max-reserved-size "4GiB" \
+		--enable-spectre-guards \
+		--spectre-branch-alignment "31" \
+		out/test.wasm -o $@
+
+out/test_align.asm: out/test_align.o
+	objdump -d out/test_align.o $< > $@
+
+build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_align.o out/test_align.so out/test_align.asm
 
 clean:
 	rm -rf out

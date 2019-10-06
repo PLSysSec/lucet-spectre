@@ -300,6 +300,7 @@ dependencies = [
  "cranelift-codegen-meta 0.44.0",
  "cranelift-codegen-shared 0.44.0",
  "cranelift-entity 0.44.0",
+ "cranelift-spectre 0.44.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -363,6 +364,10 @@ dependencies = [
  "raw-cpuid 6.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "target-lexicon 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "cranelift-spectre"
+version = "0.44.0"
 
 [[package]]
 name = "cranelift-wasm"
@@ -985,6 +990,7 @@ dependencies = [
  "cranelift-frontend 0.44.0",
  "cranelift-module 0.44.0",
  "cranelift-native 0.44.0",
+ "cranelift-spectre 0.44.0",
  "cranelift-wasm 0.44.0",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "faerie 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",

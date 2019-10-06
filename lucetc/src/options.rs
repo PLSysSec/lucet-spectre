@@ -2,6 +2,7 @@ use clap::{App, Arg, ArgMatches};
 use failure::Error;
 use lucetc::{HeapSettings, OptLevel};
 use std::path::PathBuf;
+use cranelift_spectre::settings::use_spectre_settings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CodegenOutput {
@@ -113,6 +114,21 @@ impl Options {
         let sk_path = m.value_of("sk_path").map(PathBuf::from);
         let pk_path = m.value_of("pk_path").map(PathBuf::from);
         let count_instructions = m.is_present("count_instructions");
+
+        let enable_spectre_guards = m.is_present("enable_spectre_guards");
+
+        let spectre_branch_alignment =
+            if enable_spectre_guards {
+                if let Some(str_val) = m.value_of("spectre_branch_alignment") {
+                    str_val.parse::<u32>().unwrap()
+                } else {
+                    panic!("Must specify value for spectre_branch_alignment")
+                }
+            } else {
+                0
+            };
+
+        use_spectre_settings(enable_spectre_guards, spectre_branch_alignment);
 
         Ok(Options {
             output,
@@ -252,6 +268,18 @@ impl Options {
                     .long("--count-instructions")
                     .takes_value(false)
                     .help("Instrument the produced binary to count the number of wasm operations the translated program executes")
+            )
+            .arg(
+                Arg::with_name("enable_spectre_guards")
+                    .long("--enable-spectre-guards")
+                    .takes_value(false)
+                    .help("Enable security guards to protect against spectre vulnerabilities")
+            )
+            .arg(
+                Arg::with_name("spectre_branch_alignment")
+                    .long("--spectre-branch-alignment")
+                    .takes_value(true)
+                    .help("Value to align branches in compiled wasm module. Pick an alignment value for which the host application has no branches. You will likely have to compile your host application with PLSysSec provided compilers for this."),
             )
             .get_matches();
 
