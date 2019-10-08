@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import sys
 import re
+import argparse
 
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
 
 # 0000000000000000 <guest_func_26>:
 func_pattern = re.compile("\s*[0-9a-fA-F]{16} \<.*?\>:\s*\n?")
@@ -43,19 +44,36 @@ def get_jump_offset(line):
     hex_str = "0x" + match.group(1)
     return int(hex_str, 0)
 
-def scan_file(input_file, alignment):
+# assigned later
+def matches_function(func_name, func_match_pat):
+    match = func_match_pat.fullmatch(func_name)
+    return match
+
+def print_ok(out_str, loginfo):
+    if loginfo:
+        print(bcolors.OKGREEN + out_str + bcolors.ENDC)
+
+error_count = 0
+def print_error(out_str, limit):
+    print(bcolors.FAIL + out_str + bcolors.ENDC)
+    global error_count
+    error_count = error_count + 1
+    if limit >= 0 and error_count >= limit:
+        print("At least " + str(limit) + " violations")
+        sys.exit(1)
+
+def scan_file(input_file, alignment, func_match_pat, limit, loginfo):
     STATE_SCANNING = 0
     STATE_FOUND_FUNCTION = 1
 
     state = STATE_SCANNING
     function_line = ""
-    count = 0
 
     with open(input_file, "r") as f:
         line_num = 0
         for line in f:
             line_num = line_num + 1
-            if state == STATE_SCANNING and is_function(line):
+            if state == STATE_SCANNING and is_function(line) and matches_function(get_func_name(line), func_match_pat):
                 state = STATE_FOUND_FUNCTION
                 function_name = get_func_name(line)
             elif state == STATE_FOUND_FUNCTION and is_end_of_function(line):
@@ -69,22 +87,31 @@ def scan_file(input_file, alignment):
                     " Aligned: " + str(align) + \
                     " || " + line
                 if align != 0:
-                    count = count + 1
-                    print(bcolors.FAIL + out_str + bcolors.ENDC)
+                    print_error(out_str, limit)
                 else:
-                    print(bcolors.OKGREEN + out_str + bcolors.ENDC)
-                    
+                    print_ok(out_str, loginfo)
 
-                if count > 100:
-                    print("Over 100 violations")
-                    sys.exit(1)
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: " + sys.argv[0] + " test.asm alignment_val")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=True)
+    parser.add_argument("file", type=str, help="Asm file to check")
+    parser.add_argument("--align", type=int, default=31, help="Alignment of branches to check for")
+    parser.add_argument("--func", type=str, default="*", help="Function name to check")
+    parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
+    parser.add_argument("--loginfo", type=str2bool, default=True, help="Print log level information")
+    args = parser.parse_args()
 
-    scan_file(sys.argv[1], int(sys.argv[2]))
+    func_match_pat = re.compile(args.func.replace('*', '.*'))
+    scan_file(args.file, args.align, func_match_pat, args.limit, args.loginfo)
 
 
 main()

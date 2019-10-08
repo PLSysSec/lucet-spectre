@@ -1,4 +1,4 @@
-.PHONY : build
+.PHONY : build clean check_alignments
 
 .DEFAULT_GOAL := build
 
@@ -57,7 +57,10 @@ out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucet
 out/test_align.asm: out/test_align.o
 	objdump -d out/test_align.o $< > $@
 
-build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_align.o out/test_align.so out/test_align.asm
+check_alignments: out/test_align.asm
+	./check_alignments.py $< --limit 5 --func guest_func_faccessat
+
+build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_align.o out/test_align.so out/test_align.asm check_alignments
 
 clean:
 	rm -rf out
