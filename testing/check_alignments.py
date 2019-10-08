@@ -113,5 +113,8 @@ def main():
     func_match_pat = re.compile(args.func.replace('*', '.*'))
     scan_file(args.file, args.align, func_match_pat, args.limit, args.loginfo)
 
+    if error_count != 0:
+        sys.exit(1)
+
 
 main()
