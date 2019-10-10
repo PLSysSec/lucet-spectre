@@ -62,7 +62,7 @@ def print_error(out_str, limit):
         print("At least " + str(limit) + " violations")
         sys.exit(1)
 
-def scan_file(input_file, alignment, func_match_pat, limit, loginfo):
+def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, loginfo):
     STATE_SCANNING = 0
     STATE_FOUND_FUNCTION = 1
 
@@ -81,12 +81,12 @@ def scan_file(input_file, alignment, func_match_pat, limit, loginfo):
                 function_name = ""
             elif state == STATE_FOUND_FUNCTION and is_jump_instruction(line):
                 offset = get_jump_offset(line)
-                align = offset % alignment
+                align = offset % alignment_block
                 out_str = input_file + ":" + str(line_num) + \
                     " Func: " + function_name + \
-                    " Aligned: " + str(align) + \
+                    " Aligned: " + str(align) + "/" + str(alignment_block) + \
                     " || " + line
-                if align != 0:
+                if align != alignment:
                     print_error(out_str, limit)
                 else:
                     print_ok(out_str, loginfo)
@@ -105,13 +105,14 @@ def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=True)
     parser.add_argument("file", type=str, help="Asm file to check")
     parser.add_argument("--align", type=int, default=31, help="Alignment of branches to check for")
+    parser.add_argument("--alignblock", type=int, default=32, help="Alignment block size to use")
     parser.add_argument("--func", type=str, default="*", help="Function name to check")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
     parser.add_argument("--loginfo", type=str2bool, default=True, help="Print log level information")
     args = parser.parse_args()
 
     func_match_pat = re.compile(args.func.replace('*', '.*'))
-    scan_file(args.file, args.align, func_match_pat, args.limit, args.loginfo)
+    scan_file(args.file, args.align, args.alignblock, func_match_pat, args.limit, args.loginfo)
 
     if error_count != 0:
         sys.exit(1)

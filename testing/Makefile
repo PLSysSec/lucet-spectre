@@ -33,6 +33,9 @@ out/test.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 out/test.asm: out/test.o
 	objdump -d out/test.o $< > $@
 
+out/test_so.asm: out/test.so
+	objdump -d out/test.o $< > $@
+
 out/test_align.o: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 	/home/shr/Code/lucet-spectre/target/debug/lucetc \
 		--bindings /home/shr/Code/lucet-spectre/lucet-wasi/bindings.json \
@@ -42,6 +45,7 @@ out/test_align.o: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 		--emit obj \
 		--enable-spectre-guards \
 		--spectre-branch-alignment "31" \
+		--spectre-branch-alignment-block "32" \
 		out/test.wasm -o $@
 
 out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
@@ -52,15 +56,19 @@ out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucet
 		--max-reserved-size "4GiB" \
 		--enable-spectre-guards \
 		--spectre-branch-alignment "31" \
+		--spectre-branch-alignment-block "32" \
 		out/test.wasm -o $@
 
 out/test_align.asm: out/test_align.o
 	objdump -d out/test_align.o $< > $@
 
-check_alignments: out/test_align.asm
-	./check_alignments.py $< --limit 5 --func guest_func_faccessat
+out/test_align_so.asm: out/test_align.so
+	objdump -d out/test_align.o $< > $@
 
-build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_align.o out/test_align.so out/test_align.asm check_alignments
+check_alignments: out/test_align.asm
+	./check_alignments.py $< --func "guest_func_*" --limit 10 --loginfo False
+
+build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_so.asm out/test_align.o out/test_align.so out/test_align.asm out/test_align_so.asm check_alignments
 
 clean:
 	rm -rf out

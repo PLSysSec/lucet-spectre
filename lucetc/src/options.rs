@@ -1,8 +1,8 @@
 use clap::{App, Arg, ArgMatches};
+use cranelift_spectre::settings::use_spectre_settings;
 use failure::Error;
 use lucetc::{HeapSettings, OptLevel};
 use std::path::PathBuf;
-use cranelift_spectre::settings::use_spectre_settings;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CodegenOutput {
@@ -117,18 +117,31 @@ impl Options {
 
         let enable_spectre_guards = m.is_present("enable_spectre_guards");
 
-        let spectre_branch_alignment =
-            if enable_spectre_guards {
-                if let Some(str_val) = m.value_of("spectre_branch_alignment") {
-                    str_val.parse::<u32>().unwrap()
-                } else {
-                    panic!("Must specify value for spectre_branch_alignment")
-                }
+        let spectre_branch_alignment = if enable_spectre_guards {
+            if let Some(str_val) = m.value_of("spectre_branch_alignment") {
+                str_val.parse::<u32>().unwrap()
             } else {
-                0
-            };
+                panic!("Must specify value for spectre_branch_alignment")
+            }
+        } else {
+            0
+        };
 
-        use_spectre_settings(enable_spectre_guards, spectre_branch_alignment);
+        let spectre_branch_alignment_block = if enable_spectre_guards {
+            if let Some(str_val) = m.value_of("spectre_branch_alignment_block") {
+                str_val.parse::<u32>().unwrap()
+            } else {
+                panic!("Must specify value for spectre_branch_alignment_block")
+            }
+        } else {
+            0
+        };
+
+        use_spectre_settings(
+            enable_spectre_guards,
+            spectre_branch_alignment,
+            spectre_branch_alignment_block,
+        );
 
         Ok(Options {
             output,
@@ -279,7 +292,13 @@ impl Options {
                 Arg::with_name("spectre_branch_alignment")
                     .long("--spectre-branch-alignment")
                     .takes_value(true)
-                    .help("Value to align branches in compiled wasm module. Pick an alignment value for which the host application has no branches. You will likely have to compile your host application with PLSysSec provided compilers for this."),
+                    .help("Branches in compiled wasm module will be aligned to addr mod spectre-branch-alignment-block = spectre-branch-alignment. Pick an alignment value for which the host application has no branches. You will likely have to compile your host application with PLSysSec provided compilers for this."),
+            )
+            .arg(
+                Arg::with_name("spectre_branch_alignment_block")
+                    .long("--spectre-branch-alignment-block")
+                    .takes_value(true)
+                    .help("Branches in compiled wasm module will be aligned to addr mod spectre-branch-alignment-block = spectre-branch-alignment."),
             )
             .get_matches();
 
