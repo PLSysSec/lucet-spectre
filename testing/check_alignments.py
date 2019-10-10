@@ -32,9 +32,20 @@ def get_func_name(line):
 
 #    3633:	75 a1                	jne    35d6 <guest_func_24+0x35d6>
 jump_pattern = re.compile(".*?\t.*?\tj.*\n?")
+#     2e9b:	e9 d0 fe ff ff       	jmpq   2d70 <.plt>
+uncond_fixed_jump = re.compile(".*?\t.*?\tjmp[a-z]*\s+[0-9a-fA-F]+.*\n?")
 
 def is_jump_instruction(line):
     match = jump_pattern.fullmatch(line)
+    uncond_match = uncond_fixed_jump.fullmatch(line)
+    if uncond_match:
+        return None
+    return match
+
+#     d57:	41 ff e7             	jmpq   *%r15
+indirect_jump_pattern = re.compile(".*?\t.*?\tj[a-z]*\s+\*.*\n?")
+def is_indirect_jump_instruction(line):
+    match = indirect_jump_pattern.fullmatch(line)
     return match
 
 jump_offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
@@ -62,7 +73,7 @@ def print_error(out_str, limit):
         print("At least " + str(limit) + " violations")
         sys.exit(1)
 
-def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, loginfo):
+def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, loginfo, check_indirect_branches):
     STATE_SCANNING = 0
     STATE_FOUND_FUNCTION = 1
 
@@ -86,6 +97,8 @@ def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, log
                     " Func: " + function_name + \
                     " Aligned: " + str(align) + "/" + str(alignment_block) + \
                     " || " + line
+                if check_indirect_branches == False and is_indirect_jump_instruction(line):
+                    continue
                 if align != alignment:
                     print_error(out_str, limit)
                 else:
@@ -109,10 +122,11 @@ def main():
     parser.add_argument("--func", type=str, default="*", help="Function name to check")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
     parser.add_argument("--loginfo", type=str2bool, default=True, help="Print log level information")
+    parser.add_argument("--checkindirect", type=str2bool, default=False, help="Check indirect branches for alignment")
     args = parser.parse_args()
 
     func_match_pat = re.compile(args.func.replace('*', '.*'))
-    scan_file(args.file, args.align, args.alignblock, func_match_pat, args.limit, args.loginfo)
+    scan_file(args.file, args.align, args.alignblock, func_match_pat, args.limit, args.loginfo, args.checkindirect)
 
     if error_count != 0:
         sys.exit(1)
