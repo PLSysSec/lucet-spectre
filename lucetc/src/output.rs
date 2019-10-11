@@ -66,11 +66,12 @@ impl ObjectFile {
             .expect("function manifest has entries");
         debug_assert!(stack_probe_entry.0 == stack_probe::STACK_PROBE_SYM);
         debug_assert!(stack_probe_entry.1.code_len() == 0);
+        let stack_probe_bits = stack_probe::get_stack_probe_binary();
         std::mem::swap(
             &mut stack_probe_entry.1,
             &mut FunctionSpec::new(
                 0, // there is no real address for the function until written to an object file
-                stack_probe::STACK_PROBE_BINARY.len() as u32,
+                stack_probe_bits.len() as u32,
                 0,
                 0, // fix up this FunctionSpec with trap info like any other
             ),
