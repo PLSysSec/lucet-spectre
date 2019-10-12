@@ -60,7 +60,7 @@ pub fn get_stack_probe_binary() -> Vec<u8> {
     ];
 
     let spectre_settings = get_spectre_settings();
-    let padding = if spectre_settings.enable {
+    let br_padding = if spectre_settings.enable {
         // Offset is now 29
         let offset = 29;
         let alignment = spectre_settings.alignment;
@@ -79,7 +79,7 @@ pub fn get_stack_probe_binary() -> Vec<u8> {
 
     // jump prefix
     ret.push(0x77);
-    ret.push(0xe4 - padding);
+    ret.push(0xe4 - br_padding);
 
     //remaining
     let mut remaining = vec![
@@ -87,6 +87,15 @@ pub fn get_stack_probe_binary() -> Vec<u8> {
         0x29, 0xdc, 0x48, 0x85, 0x64, 0x24, 0x08, 0x48, 0x01, 0xc4, 0xc3,
     ];
     ret.append(&mut remaining);
+
+    if spectre_settings.enable {
+        let alignment_block = spectre_settings.alignment_block;
+        let func_len = u32::try_from(ret.len()).unwrap();
+        let func_padding = alignment_block - (func_len % alignment_block);
+        for _i in 0..func_padding {
+            ret.push(0x90);
+        }
+    }
 
     return ret;
 }
