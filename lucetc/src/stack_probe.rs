@@ -97,6 +97,38 @@ pub fn get_stack_probe_binary() -> Vec<u8> {
         }
     }
 
+    // if spectre_settings.enable {
+    //     ret.append(&mut get_retpoline_binary())
+    // }
+
+    return ret;
+}
+
+pub fn get_retpoline_binary() -> Vec<u8> {
+    //                            .align 16;
+    //                            retpoline_rax_trampoline:
+    //  e8 0b 00 00 00                 call set_up_target;
+    //                            capture_spec:
+    //  f3 90 0f ae e8                 pause; lfence
+    //  eb f9                          jmp capture_spec;
+    //  0f 1f 40 00               .align 16;
+    //                            set_up_target:
+    //  4c 89 1c 24                    mov %r11, (%rsp);
+    //  c3                             ret;
+
+
+    let mut ret = vec![ 0xe8, 0x0b, 0x00, 0x00, 0x00, 0xf3, 0x90, 0x0f, 0xae, 
+        0xe8, 0xeb, 0xf9, 0x0f, 0x1f, 0x40, 0x00, 0x4c, 0x89, 0x1c, 0x24, 0xc3, ];
+
+    let spectre_settings = get_spectre_settings();
+
+    let alignment_block = spectre_settings.alignment_block;
+    let func_len = u32::try_from(ret.len()).unwrap();
+    let func_padding = alignment_block - (func_len % alignment_block);
+    for _i in 0..func_padding {
+        ret.push(0x90);
+    }
+
     return ret;
 }
 
