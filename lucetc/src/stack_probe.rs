@@ -9,7 +9,6 @@
 //! treated like any other guest trap.
 
 use crate::decls::ModuleDecls;
-use crate::module::UniqueFuncIndex;
 use cranelift_codegen::binemit::TrapSink;
 use cranelift_codegen::ir;
 use cranelift_codegen::ir::{types, AbiParam, Signature};
@@ -42,7 +41,7 @@ pub const STACK_PROBE_SYM: &'static str = "lucet_probestack";
 //     0x29, 0xdc, 0x48, 0x85, 0x64, 0x24, 0x08, 0x48, 0x01, 0xc4, 0xc3,
 // ];
 
-pub fn get_stack_probe_binary() -> Vec<u8> {
+fn get_stack_probe_binary() -> Vec<u8> {
     // 49 89 c3                     mov    %rax,%r11
     // 48 81 ec 00 10 00 00         sub    $0x1000,%rsp
     // 48 85 64 24 08               test   %rsp,0x8(%rsp)
@@ -104,9 +103,11 @@ pub fn get_stack_probe_binary() -> Vec<u8> {
     return ret;
 }
 
-pub fn get_retpoline_binary() -> Vec<u8> {
+pub const RETPOLINE_SYM_PREFIX: &'static str = "lucet_retpoline_";
+
+fn get_retpoline_binary(mut target_reg_move: Vec<u8>) -> Vec<u8> {
     //                            .align 16;
-    //                            retpoline_rax_trampoline:
+    //                            lucet_retpoline_r11:
     //  e8 0b 00 00 00                 call set_up_target;
     //                            capture_spec:
     //  f3 90 0f ae e8                 pause; lfence
@@ -118,7 +119,9 @@ pub fn get_retpoline_binary() -> Vec<u8> {
 
 
     let mut ret = vec![ 0xe8, 0x0b, 0x00, 0x00, 0x00, 0xf3, 0x90, 0x0f, 0xae, 
-        0xe8, 0xeb, 0xf9, 0x0f, 0x1f, 0x40, 0x00, 0x4c, 0x89, 0x1c, 0x24, 0xc3, ];
+        0xe8, 0xeb, 0xf9, 0x0f, 0x1f, 0x40, 0x00, ];    
+    ret.append(&mut target_reg_move);
+    ret.push(0xc3);
 
     let spectre_settings = get_spectre_settings();
 
@@ -132,36 +135,115 @@ pub fn get_retpoline_binary() -> Vec<u8> {
     return ret;
 }
 
+pub fn get_inline_assembly_functions() -> Vec<String> {
+    let mut ret = vec![STACK_PROBE_SYM.to_string()];
+    let spectre_settings = get_spectre_settings();
+    if spectre_settings.enable {
+        ret.append(&mut vec![
+            RETPOLINE_SYM_PREFIX.to_owned() + "rax",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rcx",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rdx",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rbx",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rsp",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rbp",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rsi",
+            RETPOLINE_SYM_PREFIX.to_owned() + "rdi",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r8" ,
+            RETPOLINE_SYM_PREFIX.to_owned() + "r9" ,
+            RETPOLINE_SYM_PREFIX.to_owned() + "r10",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r11",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r12",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r13",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r14",
+            RETPOLINE_SYM_PREFIX.to_owned() + "r15",
+        ]);
+    }
+    ret
+}
+
+pub fn get_inline_assembly_function_bits() -> Vec<Vec<u8>> {
+    let mut ret = vec![get_stack_probe_binary()];
+    let spectre_settings = get_spectre_settings();
+    if spectre_settings.enable {
+        ret.append(&mut vec![
+            get_retpoline_binary(vec![0x48, 0x89, 0x04, 0x24]), //"rax"
+            get_retpoline_binary(vec![0x48, 0x89, 0x0c, 0x24]), //"rcx"
+            get_retpoline_binary(vec![0x48, 0x89, 0x14, 0x24]), //"rdx"
+            get_retpoline_binary(vec![0x48, 0x89, 0x1c, 0x24]), //"rbx"
+            get_retpoline_binary(vec![0x48, 0x89, 0x24, 0x24]), //"rsp"
+            get_retpoline_binary(vec![0x48, 0x89, 0x2c, 0x24]), //"rbp"
+            get_retpoline_binary(vec![0x48, 0x89, 0x34, 0x24]), //"rsi"
+            get_retpoline_binary(vec![0x48, 0x89, 0x3c, 0x24]), //"rdi"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x04, 0x24]), //"r8" 
+            get_retpoline_binary(vec![0x4c, 0x89, 0x0c, 0x24]), //"r9" 
+            get_retpoline_binary(vec![0x4c, 0x89, 0x14, 0x24]), //"r10"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x1c, 0x24]), //"r11"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x24, 0x24]), //"r12"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x2c, 0x24]), //"r13"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x34, 0x24]), //"r14"
+            get_retpoline_binary(vec![0x4c, 0x89, 0x3c, 0x24]), //"r15"
+        ]);
+    }
+    ret
+}
+
+pub fn get_inline_assembly_functions_sig() -> Vec<Signature> {
+    let mut ret = vec![Signature {
+        params: vec![],
+        returns: vec![AbiParam::new(types::I32)],
+        call_conv: CallConv::SystemV, // the stack probe function is very specific to x86_64, and possibly to SystemV ABI platforms?
+    }];
+    let spectre_settings = get_spectre_settings();
+    if spectre_settings.enable {
+        for _reg in &["rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", 
+            "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"] {
+            ret.push(Signature {
+                params: vec![],
+                returns: vec![],
+                call_conv: CallConv::SystemV,
+            });
+        }
+    }
+    ret
+}
+
 pub fn declare_metadata<'a, B: ClifBackend>(
     decls: &mut ModuleDecls<'a>,
     clif_module: &mut ClifModule<B>,
-) -> Result<UniqueFuncIndex, Error> {
-    Ok(decls
+) -> Result<(), Error> {
+    let sigs = get_inline_assembly_functions_sig();
+    let names = get_inline_assembly_functions();
+    for i in 0..names.len() {
+        decls
         .declare_new_function(
             clif_module,
-            STACK_PROBE_SYM.to_string(),
+            names[i].clone(),
             Linkage::Local,
-            Signature {
-                params: vec![],
-                returns: vec![AbiParam::new(types::I32)],
-                call_conv: CallConv::SystemV, // the stack probe function is very specific to x86_64, and possibly to SystemV ABI platforms?
-            },
+            sigs[i].clone(),
         )
-        .unwrap())
+        .unwrap();
+    }
+    return Ok(());
 }
 
 pub fn declare_and_define(product: &mut FaerieProduct) -> Result<(), Error> {
-    product.artifact.declare_with(
-        STACK_PROBE_SYM,
-        Decl::function(),
-        get_stack_probe_binary(),
-    )?;
-    add_sink(
-        product
-            .trap_manifest
-            .as_mut()
-            .expect("trap manifest is present"),
-    );
+    let names = get_inline_assembly_functions();
+    let bits = get_inline_assembly_function_bits();
+    for i in 0..names.len() {
+        product.artifact.declare_with(
+            names[i].clone(),
+            Decl::function(),
+            bits[i].clone(),
+        )?;
+        add_sink(
+            product
+                .trap_manifest
+                .as_mut()
+                .expect("trap manifest is present"),
+            &names[i],
+            &bits[i],
+        );
+    }
     Ok(())
 }
 
@@ -182,19 +264,18 @@ fn find_test_rsp(buffer: &Vec<u8>) -> Vec<usize> {
 
     return ret;
 }
-fn add_sink(manifest: &mut FaerieTrapManifest) {
-    let stack_probe_binary = get_stack_probe_binary();
-    let mut stack_probe_trap_sink =
-        FaerieTrapSink::new(STACK_PROBE_SYM, stack_probe_binary.len() as u32);
+fn add_sink(manifest: &mut FaerieTrapManifest, name:&str, bits: &Vec<u8>) {
+    let mut trap_sink =
+        FaerieTrapSink::new(name, bits.len() as u32);
 
-    let indexes = find_test_rsp(&stack_probe_binary);
+    let indexes = find_test_rsp(&bits);
 
     for i in indexes{
-        stack_probe_trap_sink.trap(
+        trap_sink.trap(
             u32::try_from(i).unwrap(), /* test %rsp,0x8(%rsp) */
             ir::SourceLoc::default(),
             ir::TrapCode::StackOverflow,
         );
     }
-    manifest.add_sink(stack_probe_trap_sink);
+    manifest.add_sink(trap_sink);
 }

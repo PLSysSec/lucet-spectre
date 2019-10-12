@@ -59,23 +59,28 @@ impl ObjectFile {
         // "code" is 0. This is incorrect, and must be fixed up before writing out the function
         // manifest.
 
-        // because the stack probe is the last declared function...
-        let last_idx = function_manifest.len() - 1;
-        let stack_probe_entry = function_manifest
-            .get_mut(last_idx)
-            .expect("function manifest has entries");
-        debug_assert!(stack_probe_entry.0 == stack_probe::STACK_PROBE_SYM);
-        debug_assert!(stack_probe_entry.1.code_len() == 0);
-        let stack_probe_bits = stack_probe::get_stack_probe_binary();
-        std::mem::swap(
-            &mut stack_probe_entry.1,
-            &mut FunctionSpec::new(
-                0, // there is no real address for the function until written to an object file
-                stack_probe_bits.len() as u32,
-                0,
-                0, // fix up this FunctionSpec with trap info like any other
-            ),
-        );
+        // because the asm functions are the last declared functions...
+        let declared_funcs = stack_probe::get_inline_assembly_functions();
+        let declared_funcs_bits = stack_probe::get_inline_assembly_function_bits();
+
+        for i in 0..declared_funcs.len(){
+            let idx = function_manifest.len() - declared_funcs.len() + i;
+            let entry = function_manifest
+                .get_mut(idx)
+                .expect("function manifest has entries");
+            debug_assert!(entry.0 == declared_funcs[i]);
+            debug_assert!(entry.1.code_len() == 0);
+            let bits = &declared_funcs_bits[i];
+            std::mem::swap(
+                &mut entry.1,
+                &mut FunctionSpec::new(
+                    0, // there is no real address for the function until written to an object file
+                    bits.len() as u32,
+                    0,
+                    0, // fix up this FunctionSpec with trap info like any other
+                ),
+            );
+        }
 
         let trap_manifest = &product
             .trap_manifest
