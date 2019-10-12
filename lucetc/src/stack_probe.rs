@@ -165,18 +165,36 @@ pub fn declare_and_define(product: &mut FaerieProduct) -> Result<(), Error> {
     Ok(())
 }
 
+fn find_test_rsp(buffer: &Vec<u8>) -> Vec<usize> {
+    let mut ret = vec![];
+    let to_find = vec![0x48, 0x85, 0x64, 0x24, 0x08];
+    let end = buffer.len() - to_find.len();
+    
+    'outer: for i in 0..end {
+        for j in 0..to_find.len() {
+            if buffer[i + j] != to_find[j]{
+                continue 'outer;
+            }
+        }
+
+        ret.push(i);
+    }
+
+    return ret;
+}
 fn add_sink(manifest: &mut FaerieTrapManifest) {
+    let stack_probe_binary = get_stack_probe_binary();
     let mut stack_probe_trap_sink =
-        FaerieTrapSink::new(STACK_PROBE_SYM, get_stack_probe_binary().len() as u32);
-    stack_probe_trap_sink.trap(
-        10, /* test %rsp,0x8(%rsp) */
-        ir::SourceLoc::default(),
-        ir::TrapCode::StackOverflow,
-    );
-    stack_probe_trap_sink.trap(
-        34, /* test %rsp,0x8(%rsp) */
-        ir::SourceLoc::default(),
-        ir::TrapCode::StackOverflow,
-    );
+        FaerieTrapSink::new(STACK_PROBE_SYM, stack_probe_binary.len() as u32);
+
+    let indexes = find_test_rsp(&stack_probe_binary);
+
+    for i in indexes{
+        stack_probe_trap_sink.trap(
+            u32::try_from(i).unwrap(), /* test %rsp,0x8(%rsp) */
+            ir::SourceLoc::default(),
+            ir::TrapCode::StackOverflow,
+        );
+    }
     manifest.add_sink(stack_probe_trap_sink);
 }
