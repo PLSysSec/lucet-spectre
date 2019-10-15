@@ -63,7 +63,7 @@ fn get_stack_probe_binary() -> Vec<u8> {
     let br_padding = if spectre_settings.enable {
         // Offset is now 29
         let offset = 29;
-        let alignment = spectre_settings.alignment;
+        let alignment = spectre_settings.direct_branch_alignment;
         let alignment_block = spectre_settings.alignment_block;
         let block_zero_offset_padding = alignment_block - (offset % alignment_block);
         let padding = (block_zero_offset_padding + alignment) % alignment_block;
@@ -238,10 +238,16 @@ pub fn declare_metadata<'a, B: ClifBackend>(
 pub fn declare_and_define(product: &mut FaerieProduct) -> Result<(), Error> {
     let names = get_inline_assembly_functions();
     let bits = get_inline_assembly_function_bits();
+    let spectre_settings = get_spectre_settings();
+    let align = if spectre_settings.enable {
+        Some(u64::from(spectre_settings.alignment_block))
+    } else {
+        None
+    };
     for i in 0..names.len() {
         product.artifact.declare_with(
             names[i].clone(),
-            Decl::function(),
+            Decl::function().with_align(align),
             bits[i].clone(),
         )?;
         add_sink(

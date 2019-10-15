@@ -331,6 +331,7 @@ version = "0.44.0"
 dependencies = [
  "cranelift-codegen 0.44.0",
  "cranelift-module 0.44.0",
+ "cranelift-spectre 0.44.0",
  "faerie 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "goblin 0.0.24 (registry+https://github.com/rust-lang/crates.io-index)",

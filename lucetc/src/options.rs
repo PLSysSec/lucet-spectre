@@ -117,21 +117,21 @@ impl Options {
 
         let enable_spectre_guards = m.is_present("enable_spectre_guards");
 
-        let spectre_branch_alignment = if enable_spectre_guards {
-            if let Some(str_val) = m.value_of("spectre_branch_alignment") {
+        let spectre_alignment_block = if enable_spectre_guards {
+            if let Some(str_val) = m.value_of("spectre_alignment_block") {
                 str_val.parse::<u32>().unwrap()
             } else {
-                panic!("Must specify value for spectre_branch_alignment")
+                panic!("Must specify value for spectre_alignment_block")
             }
         } else {
             0
         };
 
-        let spectre_branch_alignment_block = if enable_spectre_guards {
-            if let Some(str_val) = m.value_of("spectre_branch_alignment_block") {
+        let spectre_direct_branch_alignment = if enable_spectre_guards {
+            if let Some(str_val) = m.value_of("spectre_direct_branch_alignment") {
                 str_val.parse::<u32>().unwrap()
             } else {
-                panic!("Must specify value for spectre_branch_alignment_block")
+                panic!("Must specify value for spectre_direct_branch_alignment")
             }
         } else {
             0
@@ -139,8 +139,8 @@ impl Options {
 
         use_spectre_settings(
             enable_spectre_guards,
-            spectre_branch_alignment,
-            spectre_branch_alignment_block,
+            spectre_alignment_block,
+            spectre_direct_branch_alignment,
         );
 
         Ok(Options {
@@ -289,16 +289,16 @@ impl Options {
                     .help("Enable security guards to protect against spectre vulnerabilities")
             )
             .arg(
-                Arg::with_name("spectre_branch_alignment")
-                    .long("--spectre-branch-alignment")
+                Arg::with_name("spectre_alignment_block")
+                    .long("--spectre-alignment-block")
                     .takes_value(true)
-                    .help("Branches in compiled wasm module will be aligned to addr mod spectre-branch-alignment-block = spectre-branch-alignment. Pick an alignment value for which the host application has no branches. You will likely have to compile your host application with PLSysSec provided compilers for this."),
+                    .help("Branches, returns etc in compiled wasm module will be aligned to addr mod spectre-alignment-block = <chosen_value>."),
             )
             .arg(
-                Arg::with_name("spectre_branch_alignment_block")
-                    .long("--spectre-branch-alignment-block")
+                Arg::with_name("spectre_direct_branch_alignment")
+                    .long("--spectre-direct-branch-alignment")
                     .takes_value(true)
-                    .help("Branches in compiled wasm module will be aligned to addr mod spectre-branch-alignment-block = spectre-branch-alignment."),
+                    .help("Branches in compiled wasm module will be aligned to addr mod spectre-alignment-block = spectre-direct-branch-alignment. Pick an alignment value for which the host application has no branches. You will likely have to compile your host application with PLSysSec provided compilers for this."),
             )
             .get_matches();
 

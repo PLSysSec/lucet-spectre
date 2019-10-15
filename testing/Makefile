@@ -44,8 +44,8 @@ out/test_align.o: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 		--max-reserved-size "4GiB" \
 		--emit obj \
 		--enable-spectre-guards \
-		--spectre-branch-alignment "31" \
-		--spectre-branch-alignment-block "32" \
+		--spectre-alignment-block "32" \
+		--spectre-direct-branch-alignment "31" \
 		out/test.wasm -o $@
 
 out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
@@ -55,8 +55,8 @@ out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucet
 		--min-reserved-size "4GiB" \
 		--max-reserved-size "4GiB" \
 		--enable-spectre-guards \
-		--spectre-branch-alignment "31" \
-		--spectre-branch-alignment-block "32" \
+		--spectre-alignment-block "32" \
+		--spectre-direct-branch-alignment "31" \
 		out/test.wasm -o $@
 
 out/test_align.asm: out/test_align.o
@@ -68,7 +68,7 @@ out/test_align_so.asm: out/test_align.so
 check_alignments: out/test_align_so.asm
 	./check_alignments.py $< --limit 10
 
-build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_so.asm out/test_align.o out/test_align.so out/test_align.asm out/test_align_so.asm check_alignments
+build: out out/test.wasm out/test.o out/test.so out/test.asm out/test_so.asm out/test_align.o out/test_align.so out/test_align.asm out/test_align_so.asm check_alignments
 
 clean:
 	rm -rf out
