@@ -53,7 +53,7 @@ def is_indirect_jump_instruction(line):
 
 jump_offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
 
-def get_jump_offset(line):
+def get_line_offset(line):
     match = jump_offset_pattern.search(line)
     hex_str = "0x" + match.group(1)
     return int(hex_str, 0)
@@ -62,6 +62,15 @@ def get_jump_offset(line):
 def matches_function(func_name, func_match_pat):
     match = func_match_pat.fullmatch(func_name)
     return match
+
+#    8f88:	c3                   	retq
+ret_pattern = re.compile(".*?\t.*?\tret.*\n?")
+def is_ret_instruction(line):
+    match = ret_pattern.fullmatch(line)
+    return match
+
+def is_retpoline(function_name):
+    return function_name.find("retpoline") >= 0
 
 def print_ok(out_str, loginfo):
     if loginfo:
@@ -76,14 +85,26 @@ def print_error(out_str, limit):
         print("At least " + str(limit) + " violations")
         sys.exit(1)
 
-def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, loginfo, check_indirect_branches):
+def log_message(input_file, line, line_num, function_name, alignment_block):
+    offset = get_line_offset(line)
+    curr_align = offset % alignment_block
+    out_str = input_file + ":" + str(line_num) + \
+        " Func: " + function_name + \
+        " Aligned: " + str(curr_align) + "/" + str(alignment_block) + \
+        " || " + line
+    return (out_str, curr_align)
+
+def scan_file(args):
+
+    func_match_pat = re.compile(args.function_filter.replace('*', '.*'))
+
     STATE_SCANNING = 0
     STATE_FOUND_FUNCTION = 1
 
     state = STATE_SCANNING
     function_line = ""
 
-    with open(input_file, "r") as f:
+    with open(args.input_file, "r") as f:
         line_num = 0
         for line in f:
             line_num = line_num + 1
@@ -93,19 +114,28 @@ def scan_file(input_file, alignment, alignment_block, func_match_pat, limit, log
             elif state == STATE_FOUND_FUNCTION and is_end_of_function(line):
                 state = STATE_SCANNING
                 function_name = ""
-            elif state == STATE_FOUND_FUNCTION and is_jump_instruction(line):
-                offset = get_jump_offset(line)
-                align = offset % alignment_block
-                out_str = input_file + ":" + str(line_num) + \
-                    " Func: " + function_name + \
-                    " Aligned: " + str(align) + "/" + str(alignment_block) + \
-                    " || " + line
-                if check_indirect_branches == False and is_indirect_jump_instruction(line):
+            elif state == STATE_FOUND_FUNCTION and is_jump_instruction(line) and is_indirect_jump_instruction(line):
+                if args.check_indirect_branches == False:
                     continue
-                if align != alignment:
-                    print_error(out_str, limit)
+                (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
+                print_error(out_str, args.limit)
+            elif state == STATE_FOUND_FUNCTION and is_jump_instruction(line):
+                if args.check_direct_branches == False:
+                    continue
+                (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
+                if curr_align != args.direct_branch_alignment:
+                    print_error(out_str, args.limit)
                 else:
-                    print_ok(out_str, loginfo)
+                    print_ok(out_str, args.loginfo)
+            elif state == STATE_FOUND_FUNCTION and is_ret_instruction(line):
+                if args.check_returns == False:
+                    continue
+                if is_retpoline(function_name):
+                    (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
+                    if curr_align != args.retpoline_return_alignment:
+                        print_error(out_str, args.limit)
+                    else:
+                        print_ok(out_str, args.loginfo)
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -119,17 +149,19 @@ def str2bool(v):
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, add_help=True)
-    parser.add_argument("file", type=str, help="Asm file to check")
-    parser.add_argument("--align", type=int, default=31, help="Alignment of branches to check for")
-    parser.add_argument("--alignblock", type=int, default=32, help="Alignment block size to use")
-    parser.add_argument("--func", type=str, default="*", help="Function name to check")
+    parser.add_argument("input_file", type=str, help="Asm file to check")
+    parser.add_argument("--function_filter", type=str, default="*", help="Function name to check")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
     parser.add_argument("--loginfo", type=str2bool, default=False, help="Print log level information")
-    parser.add_argument("--checkindirect", type=str2bool, default=True, help="Check indirect branches for alignment")
+    parser.add_argument("--alignment_block", type=int, default=32, help="Alignment block size to use")
+    parser.add_argument("--check_direct_branches", type=str2bool, default=True, help="Check for alignment of direct branches")
+    parser.add_argument("--direct_branch_alignment", type=int, default=31, help="Alignment of branches to check for")
+    parser.add_argument("--check_indirect_branches", type=str2bool, default=True, help="Check for presence of indirect branches")
+    parser.add_argument("--check_returns", type=str2bool, default=True, help="Check for alignment of ret instructions")
+    parser.add_argument("--retpoline_return_alignment", type=int, default=29, help="Alignment of return in retpolines to check for")
     args = parser.parse_args()
 
-    func_match_pat = re.compile(args.func.replace('*', '.*'))
-    scan_file(args.file, args.align, args.alignblock, func_match_pat, args.limit, args.loginfo, args.checkindirect)
+    scan_file(args)
 
     if error_count != 0:
         sys.exit(1)
