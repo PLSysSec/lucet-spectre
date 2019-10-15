@@ -1,6 +1,6 @@
 [submodule "cranelift"]
 	path = cranelift
-	url = https://github.com/PLSysSec/cranelift-spectre
+	url = git@github.com:PLSysSec/cranelift-spectre
 [submodule "lucet-spectest/spec"]
 	path = lucet-spectest/spec
 	url = https://github.com/webassembly/spec
