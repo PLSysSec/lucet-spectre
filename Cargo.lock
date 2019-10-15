@@ -314,6 +314,7 @@ version = "0.44.0"
 dependencies = [
  "cranelift-codegen-shared 0.44.0",
  "cranelift-entity 0.44.0",
+ "cranelift-spectre 0.44.0",
 ]
 
 [[package]]

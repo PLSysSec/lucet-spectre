@@ -20,6 +20,7 @@ use cranelift_wasm::{translate_module, FuncTranslator, WasmError};
 use failure::{format_err, Fail, ResultExt};
 use lucet_module::bindings::Bindings;
 use lucet_module::{FunctionSpec, ModuleData, MODULE_DATA_SYM};
+use cranelift_spectre::settings::get_spectre_settings;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OptLevel {
@@ -86,6 +87,7 @@ impl<'a> Compiler<'a> {
 
         let libcalls = Box::new(move |libcall| match libcall {
             ir::LibCall::Probestack => stack_probe::STACK_PROBE_SYM.to_owned(),
+            ir::LibCall::Retpoline(reg_str) => stack_probe::RETPOLINE_SYM_PREFIX.to_owned() + &reg_str,
             _ => (cranelift_module::default_libcall_names())(libcall),
         });
 
@@ -122,6 +124,7 @@ impl<'a> Compiler<'a> {
 
     pub fn object_file(mut self) -> Result<ObjectFile, LucetcError> {
         let mut func_translator = FuncTranslator::new();
+        let spectre_settings = get_spectre_settings();
 
         for (ref func, (code, code_offset)) in self.decls.function_bodies() {
             let mut func_info = FuncInfo::new(&self.decls, self.count_instructions);
@@ -133,6 +136,11 @@ impl<'a> Compiler<'a> {
                 .translate(code, *code_offset, &mut clif_context.func, &mut func_info)
                 .map_err(|e| format_err!("in {}: {:?}", func.name.symbol(), e))
                 .context(LucetcErrorKind::FunctionTranslation)?;
+
+            if spectre_settings.enable {
+                let isa = self.clif_module.isa();
+                stack_probe::add_retpoline_references(&mut clif_context.func, isa);
+            }
 
             self.clif_module
                 .define_function(func.name.as_funcid().unwrap(), &mut clif_context)

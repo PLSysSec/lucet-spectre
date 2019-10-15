@@ -11,8 +11,9 @@
 use crate::decls::ModuleDecls;
 use cranelift_codegen::binemit::TrapSink;
 use cranelift_codegen::ir;
-use cranelift_codegen::ir::{types, AbiParam, Signature};
-use cranelift_codegen::isa::CallConv;
+use cranelift_codegen::ir::{types, AbiParam, Function, Signature};
+use cranelift_codegen::ir::libcall::make_funcref_for_retpoline;
+use cranelift_codegen::isa::{CallConv, TargetIsa};
 use cranelift_faerie::traps::{FaerieTrapManifest, FaerieTrapSink};
 use cranelift_faerie::FaerieProduct;
 use cranelift_module::{Backend as ClifBackend, Linkage, Module as ClifModule};
@@ -205,6 +206,14 @@ pub fn get_inline_assembly_functions_sig() -> Vec<Signature> {
         }
     }
     ret
+}
+
+pub fn add_retpoline_references(func: &mut Function, isa: &dyn TargetIsa) {
+    for reg in &["rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", 
+            "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"] {
+        let reg_val = isa.register_info().parse_regunit(reg).unwrap();
+        make_funcref_for_retpoline(func, reg_val, isa);
+    }
 }
 
 pub fn declare_metadata<'a, B: ClifBackend>(

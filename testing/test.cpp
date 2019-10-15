@@ -1,7 +1,8 @@
 #include <stdio.h>
 
 extern "C" {
-    
+
+__attribute__((noinline))
 int singleBranch(int val)
 {
     if (val) {
@@ -23,5 +24,5 @@ void printBranch(int val)
 
 int main(int argc, char** argv)
 {
-    singleBranch(argc);
+    return singleBranch(argc);
 }
