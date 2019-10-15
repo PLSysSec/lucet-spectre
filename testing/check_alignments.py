@@ -33,7 +33,10 @@ def get_func_name(line):
 #    3633:	75 a1                	jne    35d6 <guest_func_24+0x35d6>
 jump_pattern = re.compile(".*?\t.*?\tj.*\n?")
 #     2e9b:	e9 d0 fe ff ff       	jmpq   2d70 <.plt>
-uncond_fixed_jump = re.compile(".*?\t.*?\tjmp[a-z]*\s+[0-9a-fA-F]+.*\n?")
+#     3030: ff 25 7a 70 21 00       jmpq   *0x21707a(%rip) 
+uncond_fixed_jump_addr1 = "([0-9a-fA-F]+)"
+uncond_fixed_jump_addr2 = "(\*0x[0-9a-fA-F]+\(%rip\))"
+uncond_fixed_jump = re.compile(".*?\t.*?\tjmp[a-z]*\s+(" + uncond_fixed_jump_addr1 + "|" + uncond_fixed_jump_addr2 + ").*\n?")
 
 def is_jump_instruction(line):
     match = jump_pattern.fullmatch(line)
@@ -121,8 +124,8 @@ def main():
     parser.add_argument("--alignblock", type=int, default=32, help="Alignment block size to use")
     parser.add_argument("--func", type=str, default="*", help="Function name to check")
     parser.add_argument("--limit", type=int, default=-1, help="Stop at `limit` errors")
-    parser.add_argument("--loginfo", type=str2bool, default=True, help="Print log level information")
-    parser.add_argument("--checkindirect", type=str2bool, default=False, help="Check indirect branches for alignment")
+    parser.add_argument("--loginfo", type=str2bool, default=False, help="Print log level information")
+    parser.add_argument("--checkindirect", type=str2bool, default=True, help="Check indirect branches for alignment")
     args = parser.parse_args()
 
     func_match_pat = re.compile(args.func.replace('*', '.*'))

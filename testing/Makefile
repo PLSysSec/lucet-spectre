@@ -65,8 +65,8 @@ out/test_align.asm: out/test_align.o
 out/test_align_so.asm: out/test_align.so
 	objdump -d out/test_align.o $< > $@
 
-check_alignments: out/test_align.asm
-	./check_alignments.py $< --func "guest_func_*" --limit 10 --loginfo False
+check_alignments: out/test_align_so.asm
+	./check_alignments.py $< --limit 10
 
 build: out out/test.wasm out/test.wat out/test.o out/test.so out/test.asm out/test_so.asm out/test_align.o out/test_align.so out/test_align.asm out/test_align_so.asm check_alignments
 
