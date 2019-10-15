@@ -97,10 +97,6 @@ fn get_stack_probe_binary() -> Vec<u8> {
         }
     }
 
-    // if spectre_settings.enable {
-    //     ret.append(&mut get_retpoline_binary())
-    // }
-
     return ret;
 }
 
@@ -119,12 +115,23 @@ fn get_retpoline_binary(mut target_reg_move: Vec<u8>) -> Vec<u8> {
     //  c3                             ret;
 
 
-    let mut ret = vec![ 0xe8, 0x0b, 0x00, 0x00, 0x00, 0xf3, 0x90, 0x0f, 0xae, 
-        0xe8, 0xeb, 0xf9, 0x0f, 0x1f, 0x40, 0x00, ];    
-    ret.append(&mut target_reg_move);
-    ret.push(0xc3);
-
     let spectre_settings = get_spectre_settings();
+
+    let mut ret = vec![ 0xe8, 0x0b, 0x00, 0x00, 0x00, 0xf3, 0x90, 0x0f, 0xae,
+        0xe8, 0xeb, 0xf9, 0x0f, 0x1f, 0x40, 0x00, ];
+    ret.append(&mut target_reg_move);
+    {
+        let offset = u32::try_from(ret.len()).unwrap();
+        let alignment = spectre_settings.retpoline_ret_alignment;
+        let alignment_block = spectre_settings.alignment_block;
+        let block_zero_offset_padding = alignment_block - (offset % alignment_block);
+        let padding = (block_zero_offset_padding + alignment) % alignment_block;
+
+        for _i in 0..padding {
+            ret.push(0x90);
+        }
+    }
+    ret.push(0xc3);
 
     let alignment_block = spectre_settings.alignment_block;
     let func_len = u32::try_from(ret.len()).unwrap();
