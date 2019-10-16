@@ -46,15 +46,21 @@ def is_jump_instruction(line):
     return match
 
 #     d57:	41 ff e7             	jmpq   *%r15
-indirect_jump_pattern = re.compile(".*?\t.*?\tj[a-z]*\s+\*.*\n?")
+indirect_jump_pattern = re.compile(".*?\t.*?\tj[a-z]*\s+\*%r.*\n?")
 def is_indirect_jump_instruction(line):
     match = indirect_jump_pattern.fullmatch(line)
     return match
 
-jump_offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
+# 7874:	ff d0                	callq  *%rax
+indirect_call_pattern = re.compile(".*?\t.*?\tcall[a-z]*\s+\*%r.*\n?")
+def is_indirect_call_instruction(line):
+    match = indirect_call_pattern.fullmatch(line)
+    return match
+
+offset_pattern = re.compile("\s*([0-9a-fA-F]+):.*")
 
 def get_line_offset(line):
-    match = jump_offset_pattern.search(line)
+    match = offset_pattern.search(line)
     hex_str = "0x" + match.group(1)
     return int(hex_str, 0)
 
@@ -83,6 +89,7 @@ def print_error(out_str, limit):
     error_count = error_count + 1
     if limit >= 0 and error_count >= limit:
         print("At least " + str(limit) + " violations")
+        print("Note some spurious errors exist as lucet appends data to the end of functions. Thus if you see a disallowed instruction after the last ret of a function, please ignore this")
         sys.exit(1)
 
 def log_message(input_file, line, line_num, function_name, alignment_block):
@@ -114,7 +121,12 @@ def scan_file(args):
             elif state == STATE_FOUND_FUNCTION and is_end_of_function(line):
                 state = STATE_SCANNING
                 function_name = ""
-            elif state == STATE_FOUND_FUNCTION and is_jump_instruction(line) and is_indirect_jump_instruction(line):
+            elif state == STATE_FOUND_FUNCTION and is_indirect_call_instruction(line):
+                if args.check_indirect_calls == False:
+                    continue
+                (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
+                print_error(out_str, args.limit)
+            elif state == STATE_FOUND_FUNCTION and is_indirect_jump_instruction(line):
                 if args.check_indirect_branches == False:
                     continue
                 (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
@@ -161,6 +173,7 @@ def main():
     parser.add_argument("--check_direct_branches", type=str2bool, default=True, help="Check for alignment of direct branches")
     parser.add_argument("--direct_branch_alignment", type=int, default=31, help="Alignment of branches to check for")
     parser.add_argument("--check_indirect_branches", type=str2bool, default=True, help="Check for presence of indirect branches")
+    parser.add_argument("--check_indirect_calls", type=str2bool, default=True, help="Check for presence of indirect calls")
     parser.add_argument("--check_returns", type=str2bool, default=True, help="Check for alignment of ret instructions")
     parser.add_argument("--retpoline_return_alignment", type=int, default=29, help="Alignment of return in retpolines to check for")
     parser.add_argument("--return_alignment", type=int, default=27, help="Alignment of return to check for")
@@ -169,6 +182,7 @@ def main():
     scan_file(args)
 
     if error_count != 0:
+        print("Note some spurious errors exist as lucet appends data to the end of functions. Thus if you see a disallowed instruction after the last ret of a function, please ignore this")
         sys.exit(1)
 
 
