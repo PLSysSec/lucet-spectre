@@ -84,9 +84,22 @@ fn get_stack_probe_binary() -> Vec<u8> {
     //remaining
     let mut remaining = vec![
         0x4c,
-        0x29, 0xdc, 0x48, 0x85, 0x64, 0x24, 0x08, 0x48, 0x01, 0xc4, 0xc3,
+        0x29, 0xdc, 0x48, 0x85, 0x64, 0x24, 0x08, 0x48, 0x01, 0xc4,
     ];
     ret.append(&mut remaining);
+
+    if spectre_settings.enable {
+        let offset = u32::try_from(ret.len()).unwrap();
+        let alignment = spectre_settings.ret_alignment;
+        let alignment_block = spectre_settings.alignment_block;
+        let block_zero_offset_padding = alignment_block - (offset % alignment_block);
+        let padding = (block_zero_offset_padding + alignment) % alignment_block;
+
+        for _i in 0..padding {
+            ret.push(0x90);
+        }
+    }
+    ret.push(0xc3);
 
     if spectre_settings.enable {
         let alignment_block = spectre_settings.alignment_block;
