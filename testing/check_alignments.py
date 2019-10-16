@@ -130,12 +130,16 @@ def scan_file(args):
             elif state == STATE_FOUND_FUNCTION and is_ret_instruction(line):
                 if args.check_returns == False:
                     continue
+                (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
+
+                target_alignment = args.return_alignment
                 if is_retpoline(function_name):
-                    (out_str, curr_align) = log_message(args.input_file, line, line_num, function_name, args.alignment_block)
-                    if curr_align != args.retpoline_return_alignment:
-                        print_error(out_str, args.limit)
-                    else:
-                        print_ok(out_str, args.loginfo)
+                    target_alignment = args.retpoline_return_alignment
+
+                if curr_align != target_alignment:
+                    print_error(out_str, args.limit)
+                else:
+                    print_ok(out_str, args.loginfo)
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -159,6 +163,7 @@ def main():
     parser.add_argument("--check_indirect_branches", type=str2bool, default=True, help="Check for presence of indirect branches")
     parser.add_argument("--check_returns", type=str2bool, default=True, help="Check for alignment of ret instructions")
     parser.add_argument("--retpoline_return_alignment", type=int, default=29, help="Alignment of return in retpolines to check for")
+    parser.add_argument("--return_alignment", type=int, default=27, help="Alignment of return to check for")
     args = parser.parse_args()
 
     scan_file(args)

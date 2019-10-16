@@ -47,6 +47,7 @@ out/test_align.o: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
 		--spectre-alignment-block "32" \
 		--spectre-direct-branch-alignment "31" \
 		--spectre-retpoline-ret-alignment "29" \
+		--spectre-ret-alignment "27" \
 		out/test.wasm -o $@
 
 out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucetc
@@ -59,6 +60,7 @@ out/test_align.so: out/test.wasm /home/shr/Code/lucet-spectre/target/debug/lucet
 		--spectre-alignment-block "32" \
 		--spectre-direct-branch-alignment "31" \
 		--spectre-retpoline-ret-alignment "29" \
+		--spectre-ret-alignment "27" \
 		out/test.wasm -o $@
 
 out/test_align.asm: out/test_align.o

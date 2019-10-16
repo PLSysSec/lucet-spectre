@@ -147,11 +147,22 @@ impl Options {
             0
         };
 
+        let spectre_ret_alignment = if enable_spectre_guards {
+            if let Some(str_val) = m.value_of("spectre_ret_alignment") {
+                str_val.parse::<u32>().unwrap()
+            } else {
+                panic!("Must specify value for spectre_ret_alignment")
+            }
+        } else {
+            0
+        };
+
         use_spectre_settings(
             enable_spectre_guards,
             spectre_alignment_block,
             spectre_direct_branch_alignment,
             spectre_retpoline_ret_alignment,
+            spectre_ret_alignment,
         );
 
         Ok(Options {
@@ -316,6 +327,12 @@ impl Options {
                     .long("--spectre-retpoline-ret-alignment")
                     .takes_value(true)
                     .help("The return instruction in retpolines will be aligned to addr mod spectre-alignment-block = spectre-retpoline-ret-alignment. Pick an alignment value for which the host application has no indirect branches or returns. You will likely have to compile your host application with PLSysSec provided compilers for this."),
+            )
+            .arg(
+                Arg::with_name("spectre_ret_alignment")
+                    .long("--spectre-ret-alignment")
+                    .takes_value(true)
+                    .help("The return instruction in retpolines will be aligned to addr mod spectre-alignment-block = spectre-ret-alignment. Pick an alignment value for which the host application has no indirect branches or returns. You will likely have to compile your host application with PLSysSec provided compilers for this."),
             )
             .get_matches();
 
