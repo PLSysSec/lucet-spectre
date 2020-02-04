@@ -20,8 +20,12 @@ void printBranch(int val)
         printf("else side\n");
     }
 }
+
+int deref(int* ptr) {
+    return *ptr;
 }
 
+}
 int main(int argc, char** argv)
 {
     return singleBranch(argc);

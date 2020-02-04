@@ -3,6 +3,7 @@
 .DEFAULT_GOAL := build
 
 wasiclang_SOURCE_DIR=/home/shr/Code/LibrarySandboxing/rlbox_lucet_sandbox/build/_deps/wasiclang-src
+export RUST_BACKTRACE=1
 
 out:
 	mkdir -p out
