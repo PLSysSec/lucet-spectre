@@ -109,9 +109,7 @@ impl ObjectFile {
         function_manifest: &mut Vec<(String, FunctionSpec)>,
     ) -> Result<(), Error> {
         let func = if cranelift_spectre::settings::get_mitigations_enable() {
-            Decl::function().with_align(Some(
-                cranelift_spectre::padding::get_function_align().into(),
-            ))
+            Decl::function().with_align(cranelift_spectre::padding::get_function_align())
         } else {
             Decl::function()
         };

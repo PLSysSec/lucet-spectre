@@ -198,10 +198,14 @@ impl Options {
             let spectre_tblocks_in_ablock = m
                 .value_of("spectre_tblocks_in_ablock")
                 .map(|m| m.parse::<u32>().unwrap());
+            let spectre_function_align_enable = m
+                .value_of("spectre_function_align_enable")
+                .map(|m| m.parse::<bool>().unwrap());
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitagations_enable,
                 spectre_tblock_size,
                 spectre_tblocks_in_ablock,
+                spectre_function_align_enable,
             );
         }
 
@@ -452,6 +456,12 @@ SSE3 but not AVX:
                     .long("--spectre-tblocks-in-ablock")
                     .takes_value(true)
                     .help("Number of transaction blocks in alignment block. Alignment blocks help align instructions."),
+            )
+            .arg(
+                Arg::with_name("spectre_function_align_enable")
+                    .long("--spectre-function-align-enable")
+                    .takes_value(true)
+                    .help("Whether to align the each function."),
             )
             .arg(
                 Arg::with_name("keygen")
