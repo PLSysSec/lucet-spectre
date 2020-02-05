@@ -190,8 +190,8 @@ impl Options {
             Some(_) => panic!("unknown value for opt-level"),
         };
 
-        let spectre_mitagations_enable = m.is_present("spectre_mitagations_enable");
-        if spectre_mitagations_enable {
+        let spectre_mitigations_enable = m.is_present("spectre_mitigations_enable");
+        if spectre_mitigations_enable {
             let spectre_tblock_size = m
                 .value_of("spectre_tblock_size")
                 .map(|m| m.parse::<u32>().unwrap());
@@ -202,7 +202,7 @@ impl Options {
                 .value_of("spectre_function_align_enable")
                 .map(|m| m.parse::<bool>().unwrap());
             cranelift_spectre::settings::use_spectre_mitigation_settings(
-                spectre_mitagations_enable,
+                spectre_mitigations_enable,
                 spectre_tblock_size,
                 spectre_tblocks_in_ablock,
                 spectre_function_align_enable,
@@ -440,10 +440,10 @@ SSE3 but not AVX:
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
             )
             .arg(
-                Arg::with_name("spectre_mitagations_enable")
-                    .long("--spectre-mitagations-enable")
+                Arg::with_name("spectre_mitigations_enable")
+                    .long("--spectre-mitigations-enable")
                     .takes_value(false)
-                    .help("Enable security mitagations to protect against spectre vulnerabilities")
+                    .help("Enable security mitigations to protect against spectre vulnerabilities")
             )
             .arg(
                 Arg::with_name("spectre_tblock_size")
