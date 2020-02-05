@@ -189,8 +189,24 @@ impl Options {
             Some(_) => panic!("unknown value for opt-level"),
         };
 
-        let enable_spectre_mitagations = m.is_present("enable_spectre_mitagations");
-        cranelift_spectre::settings::use_spectre_mitigation_settings(enable_spectre_mitagations);
+        let spectre_mitagations_enable = m.is_present("spectre_mitagations_enable");
+        if spectre_mitagations_enable {
+            let spectre_tblock_size = m
+                .value_of("spectre_tblock_size")
+                .unwrap()
+                .parse::<u32>()
+                .unwrap();
+            let spectre_tblocks_in_ablock = m
+                .value_of("spectre_tblocks_in_ablock")
+                .unwrap()
+                .parse::<u32>()
+                .unwrap();
+            cranelift_spectre::settings::use_spectre_mitigation_settings(
+                spectre_mitagations_enable,
+                spectre_tblock_size,
+                spectre_tblocks_in_ablock,
+            );
+        }
 
         let target = match m.value_of("target") {
             None => Triple::host(),
@@ -421,10 +437,22 @@ SSE3 but not AVX:
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
             )
             .arg(
-                Arg::with_name("enable_spectre_mitagations")
-                    .long("--enable-spectre-mitagations")
+                Arg::with_name("spectre_mitagations_enable")
+                    .long("--spectre-mitagations-enable")
                     .takes_value(false)
                     .help("Enable security mitagations to protect against spectre vulnerabilities")
+            )
+            .arg(
+                Arg::with_name("spectre_tblock_size")
+                    .long("--spectre-tblock-size")
+                    .takes_value(true)
+                    .help("Value used as the bundle size for instructions---similar to native client."),
+            )
+            .arg(
+                Arg::with_name("spectre_tblocks_in_ablock")
+                    .long("--spectre-tblocks-in-ablock")
+                    .takes_value(true)
+                    .help("Number of transaction blocks in alignment block. Alignment blocks help align instructions."),
             )
             .arg(
                 Arg::with_name("keygen")
