@@ -190,6 +190,9 @@ impl Options {
             Some(_) => panic!("unknown value for opt-level"),
         };
 
+        let enable_spectre_mitagations = m.is_present("enable_spectre_mitagations");
+        cranelift_spectre::settings::use_spectre_mitigation_settings(enable_spectre_mitagations);
+
         let target = match m.value_of("target") {
             None => Triple::host(),
             Some(t) => match Triple::from_str(&t) {
@@ -419,6 +422,12 @@ SSE3 but not AVX:
                     .takes_value(true)
                     .possible_values(&["0", "1", "2", "none", "speed", "speed_and_size"])
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
+            )
+            .arg(
+                Arg::with_name("enable_spectre_mitagations")
+                    .long("--enable-spectre-mitagations")
+                    .takes_value(false)
+                    .help("Enable security mitagations to protect against spectre vulnerabilities")
             )
             .arg(
                 Arg::with_name("keygen")
