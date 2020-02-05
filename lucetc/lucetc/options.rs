@@ -193,14 +193,10 @@ impl Options {
         if spectre_mitagations_enable {
             let spectre_tblock_size = m
                 .value_of("spectre_tblock_size")
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
+                .map(|m| m.parse::<u32>().unwrap());
             let spectre_tblocks_in_ablock = m
                 .value_of("spectre_tblocks_in_ablock")
-                .unwrap()
-                .parse::<u32>()
-                .unwrap();
+                .map(|m| m.parse::<u32>().unwrap());
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitagations_enable,
                 spectre_tblock_size,
