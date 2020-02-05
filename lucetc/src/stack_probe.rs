@@ -59,13 +59,16 @@ pub fn declare_metadata<'a, B: ClifBackend>(
 }
 
 pub fn declare_and_define(product: &mut FaerieProduct) -> Result<(), Error> {
+    let func = if cranelift_spectre::settings::get_mitigations_enable() {
+        Decl::function().with_align(Some(
+            cranelift_spectre::padding::get_function_align().into(),
+        ))
+    } else {
+        Decl::function()
+    };
     product
         .artifact
-        .declare_with(
-            STACK_PROBE_SYM,
-            Decl::function(),
-            STACK_PROBE_BINARY.to_vec(),
-        )
+        .declare_with(STACK_PROBE_SYM, func, STACK_PROBE_BINARY.to_vec())
         .map_err(|source| Error::Failure(source, "Stack probe error".to_owned()))?;
     add_sink(
         product
