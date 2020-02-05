@@ -60,9 +60,7 @@ pub fn declare_metadata<'a, B: ClifBackend>(
 
 pub fn declare_and_define(product: &mut FaerieProduct) -> Result<(), Error> {
     let func = if cranelift_spectre::settings::get_mitigations_enable() {
-        Decl::function().with_align(Some(
-            cranelift_spectre::padding::get_function_align().into(),
-        ))
+        Decl::function().with_align(cranelift_spectre::padding::get_function_align())
     } else {
         Decl::function()
     };
