@@ -201,11 +201,15 @@ impl Options {
             let spectre_function_align_enable = m
                 .value_of("spectre_function_align_enable")
                 .map(|m| m.parse::<bool>().unwrap());
+            let spectre_tblock_enable = m
+                .value_of("spectre_tblock_enable")
+                .map(|m| m.parse::<bool>().unwrap());
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
                 spectre_tblock_size,
                 spectre_tblocks_in_ablock,
                 spectre_function_align_enable,
+                spectre_tblock_enable,
             );
         }
 
@@ -460,6 +464,12 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_function_align_enable")
                     .long("--spectre-function-align-enable")
+                    .takes_value(true)
+                    .help("Whether to align the each function."),
+            )
+            .arg(
+                Arg::with_name("spectre_tblock_enable")
+                    .long("--spectre-tblock-enable")
                     .takes_value(true)
                     .help("Whether to align the each function."),
             )
