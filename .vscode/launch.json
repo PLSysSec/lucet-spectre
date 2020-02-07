@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "lucetc",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "../sfi-spectre-testing/out/test.wasm",
+                "-o", "../sfi-spectre-testing/out/test.o",
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
