@@ -210,6 +210,12 @@ impl Options {
             let spectre_direct_branch_align = m
                 .value_of("spectre_direct_branch_align")
                 .map(|m| m.parse::<u32>().unwrap());
+            let spectre_indirect_branch_align_enable = m
+                .value_of("spectre_indirect_branch_align_enable")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_indirect_branch_align = m
+                .value_of("spectre_indirect_branch_align")
+                .map(|m| m.parse::<u32>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -219,6 +225,8 @@ impl Options {
                 spectre_tblock_enable,
                 spectre_direct_branch_align_enable,
                 spectre_direct_branch_align,
+                spectre_indirect_branch_align_enable,
+                spectre_indirect_branch_align,
             );
         }
 
@@ -493,6 +501,18 @@ SSE3 but not AVX:
                     .long("--spectre-direct-branch-align")
                     .takes_value(true)
                     .help("What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value."),
+            )
+            .arg(
+                Arg::with_name("spectre_indirect_branch_align_enable")
+                .long("--spectre-indirect-branch-align-enable")
+                .takes_value(true)
+                .help("Whether to align the indirect branch instructions.")
+            )
+            .arg(
+                Arg::with_name("spectre_indirect_branch_align")
+                .long("--spectre-indirect-branch-align")
+                .takes_value(true)
+                .help("What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value."),
             )
             .arg(
                 Arg::with_name("keygen")
