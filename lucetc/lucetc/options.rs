@@ -218,6 +218,9 @@ impl Options {
             let spectre_indirect_call_via_jump = m
                 .value_of("spectre_indirect_call_via_jump")
                 .map(|m| m.parse::<bool>().unwrap());
+            let spectre_mask_after_unspill = m
+                .value_of("spectre_mask_after_unspill")
+                .map(|m| m.parse::<bool>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -230,6 +233,7 @@ impl Options {
                 spectre_indirect_branch_align_enable,
                 spectre_indirect_branch_align,
                 spectre_indirect_call_via_jump,
+                spectre_mask_after_unspill,
             );
         }
 
@@ -520,6 +524,12 @@ SSE3 but not AVX:
                 .long("--spectre-indirect-call-via-jump")
                 .takes_value(true)
                 .help("Whether to replace all indirect calls with jump instructions.")
+            )
+            .arg(
+                Arg::with_name("spectre_mask_after_unspill")
+                .long("--spectre-mask-after-unspill")
+                .takes_value(true)
+                .help("Whether to mask all registers after unspilling.")
             )
             .arg(
                 Arg::with_name("keygen")
