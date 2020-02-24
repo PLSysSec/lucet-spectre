@@ -322,6 +322,10 @@ impl ModuleInternal for MockModule {
     fn get_signature(&self, fn_id: FunctionIndex) -> &Signature {
         self.module_data.get_signature(fn_id)
     }
+
+    fn get_signatures(&self) -> &[Signature] {
+        self.module_data.signatures()
+    }
 }
 
 pub struct MockExportBuilder {

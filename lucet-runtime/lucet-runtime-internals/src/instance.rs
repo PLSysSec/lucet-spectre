@@ -992,6 +992,23 @@ impl Instance {
         }
     }
 
+    pub fn set_current_instance(&mut self)
+    {
+        // there should never be another instance running on this thread when we enter this function
+        CURRENT_INSTANCE.with(|current_instance| {
+            let mut current_instance = current_instance.borrow_mut();
+            // safety: `self` is not null if we are in this function
+            *current_instance = Some(unsafe { NonNull::new_unchecked(self) });
+        });
+    }
+
+    pub fn clear_current_instance(&mut self)
+    {
+        CURRENT_INSTANCE.with(|current_instance| {
+            *current_instance.borrow_mut() = None;
+        });
+    }
+
     fn run_start(&mut self) -> Result<(), Error> {
         if let Some(start) = self.module.get_start_func()? {
             let res = self.run_func(start, &[])?;

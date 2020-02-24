@@ -66,6 +66,8 @@ pub trait ModuleInternal: Send + Sync {
 
     fn get_signature(&self, fn_id: FunctionIndex) -> &Signature;
 
+    fn get_signatures(&self) -> &[Signature];
+
     fn function_handle_from_ptr(&self, ptr: FunctionPointer) -> FunctionHandle {
         let id = self
             .function_manifest()

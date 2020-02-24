@@ -107,8 +107,8 @@ impl DlModule {
         // functions will be provided by the current executable.  We trust our wasm->dylib compiler
         // to make sure these function calls are the way the dylib can touch memory outside of its
         // stack and heap.
-        let abs_so_path = so_path.as_ref().canonicalize().map_err(Error::DlError)?;
-        let lib = Library::new(abs_so_path.as_os_str()).map_err(Error::DlError)?;
+        // let abs_so_path = so_path.as_ref().canonicalize().map_err(Error::DlError)?;
+        let lib = Library::new(so_path.as_ref().as_os_str()).map_err(Error::DlError)?;
 
         let serialized_module_ptr = unsafe {
             lib.get::<*const SerializedModule>(LUCET_MODULE_SYM.as_bytes())
@@ -302,6 +302,10 @@ impl ModuleInternal for DlModule {
 
     fn get_signature(&self, fn_id: FunctionIndex) -> &Signature {
         self.module.module_data.get_signature(fn_id)
+    }
+
+    fn get_signatures(&self) -> &[Signature] {
+        self.module.module_data.signatures()
     }
 }
 
