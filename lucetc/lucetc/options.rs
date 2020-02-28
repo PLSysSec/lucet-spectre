@@ -222,6 +222,9 @@ impl Options {
             let spectre_mask_after_unspill = m
                 .value_of("spectre_mask_after_unspill")
                 .map(|m| m.parse::<bool>().unwrap());
+            let spectre_align_basic_blocks = m
+                .value_of("spectre_align_basic_blocks")
+                .map(|m| m.parse::<bool>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -235,6 +238,7 @@ impl Options {
                 spectre_indirect_branch_align,
                 spectre_indirect_call_via_jump,
                 spectre_mask_after_unspill,
+                spectre_align_basic_blocks,
             );
         }
 
