@@ -225,6 +225,9 @@ impl Options {
             let spectre_align_basic_blocks = m
                 .value_of("spectre_align_basic_blocks")
                 .map(|m| m.parse::<bool>().unwrap());
+            let spectre_mask_indirects_cf = m
+                .value_of("spectre_mask_indirects_cf")
+                .map(|m| m.parse::<bool>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -239,6 +242,7 @@ impl Options {
                 spectre_indirect_call_via_jump,
                 spectre_mask_after_unspill,
                 spectre_align_basic_blocks,
+                spectre_mask_indirects_cf,
             );
         }
 
@@ -493,19 +497,19 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_function_align_enable")
                     .long("--spectre-function-align-enable")
-                    .takes_value(true)
+                    .takes_value(false)
                     .help("Whether to align the each function."),
             )
             .arg(
                 Arg::with_name("spectre_tblock_enable")
                     .long("--spectre-tblock-enable")
-                    .takes_value(true)
+                    .takes_value(false)
                     .help("Whether to use transaction blocks."),
             )
             .arg(
                 Arg::with_name("spectre_direct_branch_align_enable")
                     .long("--spectre-direct-branch-align-enable")
-                    .takes_value(true)
+                    .takes_value(false)
                     .help("Whether to align the direct branch instructions."),
             )
             .arg(
@@ -517,7 +521,7 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_indirect_branch_align_enable")
                 .long("--spectre-indirect-branch-align-enable")
-                .takes_value(true)
+                .takes_value(false)
                 .help("Whether to align the indirect branch instructions.")
             )
             .arg(
@@ -529,14 +533,26 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_indirect_call_via_jump")
                 .long("--spectre-indirect-call-via-jump")
-                .takes_value(true)
+                .takes_value(false)
                 .help("Whether to replace all indirect calls with jump instructions.")
             )
             .arg(
                 Arg::with_name("spectre_mask_after_unspill")
                 .long("--spectre-mask-after-unspill")
-                .takes_value(true)
+                .takes_value(false)
                 .help("Whether to mask all registers after unspilling.")
+            )
+            .arg(
+                Arg::with_name("spectre_align_basic_blocks")
+                .long("--spectre-align-basic-blocks")
+                .takes_value(false)
+                .help("Whether to align all basic blocks.")
+            )
+            .arg(
+                Arg::with_name("spectre_mask_indirects_cf")
+                .long("--spectre-mask-call-indirects")
+                .takes_value(false)
+                .help("Whether to mask all indirect control flow.")
             )
             .arg(
                 Arg::with_name("keygen")
