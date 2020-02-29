@@ -21,6 +21,7 @@ SHOOTOUT_LUCET_OBJS:=
 LUCETC_FLAGS:=--opt-level speed --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -I$(SIGHTGLASS)/include
 SPECTRE_FLAGS:=--spectre-mitigations-enable
+FENCE_FLAGS:=--spectre-baseline-loadfence-enable
 
 SHOOTOUT_NATIVE_CFLAGS:=-march=native -fPIC \
 	-DIMPL_REFERENCE -DUSE_LEND \
@@ -48,6 +49,8 @@ build: build/lucet/implementation.so
 build: build/lucet/module.so
 build: build/spectre/implementation.so
 build: build/spectre/module.so
+build: build/fence/implementation.so
+build: build/fence/module.so
 build: $(LUCET_ROOT)/target/release/sightglass
 
 # With the xenial gcc (5.4.0) this pins the CPU for minutes if above -O1, so its getting downgraded to -O1
@@ -71,6 +74,10 @@ build/spectre/shootout/%.o: $(SHOOTOUT)/%.c
 	@mkdir -p $(@D)
 	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
 
+build/fence/shootout/%.o: $(SHOOTOUT)/%.c
+	@mkdir -p $(@D)
+	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
+
 build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
 	@mkdir -p $(@D)
 	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
@@ -83,6 +90,13 @@ build/spectre/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/sp
 	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
 
 build/spectre/module.wasm: build/spectre/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/fence/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/fence/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/fence/module.wasm: build/fence/module.wasm.unoptimized
 	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
 
 # Don't emit the shared object, we need a saparate link step below.
@@ -100,6 +114,13 @@ build/spectre/module.o: build/spectre/module.wasm $(LIBBUILTINS)
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/spectre/module.wasm -o $@
 
+build/fence/module.o: build/fence/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) $(FENCE_FLAGS) --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/fence/module.wasm -o $@
+
 build/lucet/module.clif: build/lucet/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
@@ -113,6 +134,13 @@ build/spectre/module.clif: build/spectre/module.wasm $(LIBBUILTINS)
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/spectre/module.wasm -o $@
+
+build/fence/module.clif: build/fence/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) $(FENCE_FLAGS) --emit=clif \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/fence/module.wasm -o $@
 
 # Because liblucet-runtime-c is dynamically loaded (transitively) by implementation.so, we
 # need to link the wasm object to the same libraries.
@@ -129,6 +157,13 @@ build/spectre/module.so: build/spectre/module.o
 		-L $(dir $(LIBBUILTINS)) \
 		-Wl,-rpath $(dir $(LIBBUILTINS)) \
 		build/spectre/module.o -lbuiltins -o $@
+
+build/fence/module.so: build/fence/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/fence/module.o -lbuiltins -o $@
 
 build/lucet/%.o: %.c
 	@mkdir -p $(@D)
@@ -147,6 +182,16 @@ build/spectre/%.o: %.c
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/spectre/module.so) \
+		-c $^ -o $@
+
+
+build/fence/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/fence/module.so) \
 		-c $^ -o $@
 
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
@@ -174,6 +219,22 @@ build/spectre/implementation.so: $(LIBBUILTINS)
 		-L $(dir $(LIBBUILTINS)) \
 		-Wl,-rpath $(dir $(LIBBUILTINS)) \
 		build/spectre/wrapper.o build/spectre/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
+
+
+
+build/fence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/fence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/fence/implementation.so: build/fence/wrapper.o
+build/fence/implementation.so: build/fence/hostcalls.o
+build/fence/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/fence/wrapper.o build/fence/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
