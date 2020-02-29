@@ -2,6 +2,7 @@
 test_suites = [
   { name = "Reference", library_path = "./build/native/implementation.so" },
   { name = "lucet", library_path = "./build/lucet/implementation.so" },
+  { name = "spectre", library_path = "./build/spectre/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
