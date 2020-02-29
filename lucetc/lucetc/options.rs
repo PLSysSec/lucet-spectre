@@ -190,6 +190,9 @@ impl Options {
             Some(_) => panic!("unknown value for opt-level"),
         };
 
+        let spectre_baseline_loadfence_enable = m.is_present("spectre_baseline_loadfence_enable");
+        cranelift_spectre::settings::use_spectre_baseline_settings(spectre_baseline_loadfence_enable);
+
         let spectre_mitigations_enable = m.is_present("spectre_mitigations_enable");
         if spectre_mitigations_enable {
             let spectre_tblock_size = m
@@ -475,6 +478,12 @@ SSE3 but not AVX:
                     .takes_value(true)
                     .possible_values(&["0", "1", "2", "none", "speed", "speed_and_size"])
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
+            )
+            .arg(
+                Arg::with_name("spectre_baseline_loadfence_enable")
+                    .long("--spectre-baseline-loadfence-enable")
+                    .takes_value(false)
+                    .help("Enable baseline security mitigation of using a lfence before every load to protect against spectre vulnerabilities. This is only a baseline comparison for --spectre-mitigations-enable.")
             )
             .arg(
                 Arg::with_name("spectre_mitigations_enable")

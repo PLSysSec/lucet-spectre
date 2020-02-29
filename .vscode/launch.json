@@ -26,6 +26,25 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "lucetc_baseline_lfence",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "../sfi-spectre-testing/out/test.wasm",
+                "-o", "../sfi-spectre-testing/out/test_spectre_baseline.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "lucetc_spectre",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
