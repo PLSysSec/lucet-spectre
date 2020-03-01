@@ -49,13 +49,15 @@
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigations-enable",
+                "--pinned-heap-reg",
+                "--pinned-control-flow",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "../sfi-spectre-testing/out/test.wasm",
-                "-o", "../sfi-spectre-testing/out/test.o",
+                "../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "../out/sfi-spectre-test/basic_test/test.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -88,6 +90,8 @@
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigations-enable",
+                "--pinned-heap-reg",
+                "--pinned-control-flow",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
@@ -100,6 +104,25 @@
                 "RUST_BACKTRACE" : "1"
             },
             "cwd": "${workspaceFolder}"
-        }
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "lucet-wasi",
+            "program": "${workspaceFolder}/target/debug/lucet-wasi",
+            "args": [
+                "--heap-address-space", "8GiB",
+                "--max-heap-size", "4GiB",
+                "--stack-size", "8MiB",
+                "--dir", "/:/",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre.so"
+
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+
     ]
 }
