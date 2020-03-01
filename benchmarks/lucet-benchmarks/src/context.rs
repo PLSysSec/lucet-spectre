@@ -9,7 +9,7 @@ fn context_init(c: &mut Criterion) {
 
     c.bench_function("context_init", move |b| {
         b.iter(|| {
-            ContextHandle::create_and_init(&mut *stack, f as usize, &[], std::ptr::null_mut())
+            ContextHandle::create_and_init(&mut *stack, f as usize, &[], std::ptr::null_mut(), std::ptr::null())
                 .unwrap();
         })
     });
@@ -28,6 +28,7 @@ fn context_swap_return(c: &mut Criterion) {
                     f as usize,
                     &[],
                     std::ptr::null_mut(),
+                    std::ptr::null(),
                 )
                 .unwrap();
                 (stack, child)
@@ -56,6 +57,7 @@ fn context_init_swap_return(c: &mut Criterion) {
                     f as usize,
                     &[],
                     std::ptr::null_mut(),
+                    std::ptr::null(),
                 )
                 .unwrap();
                 unsafe { Context::swap(&mut parent, &mut child) };
@@ -349,6 +351,7 @@ fn context_init_swap_return_many_args(c: &mut Criterion) {
                     f as usize,
                     &args,
                     std::ptr::null_mut(),
+                    std::ptr::null(),
                 )
                 .unwrap();
                 unsafe { Context::swap(&mut parent, &mut child) };

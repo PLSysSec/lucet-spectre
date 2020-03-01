@@ -848,6 +848,8 @@ impl Instance {
         args_with_vmctx.extend_from_slice(args);
 
         let self_ptr = self as *mut _;
+        let code = self.module.get_code_segment();
+
         Context::init_with_callback(
             unsafe { self.alloc.stack_u64_mut() },
             &mut self.ctx,
@@ -856,6 +858,7 @@ impl Instance {
             func.ptr.as_usize(),
             &args_with_vmctx,
             heap,
+            code,
         )?;
 
         // Set up the guest to set itself as terminable, then continue to

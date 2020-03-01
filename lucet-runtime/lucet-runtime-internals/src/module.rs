@@ -38,6 +38,9 @@ pub trait Module: ModuleInternal {
 }
 
 pub trait ModuleInternal: Send + Sync {
+    fn get_code_segment(&self) -> *const c_void {
+        panic!("Not implemented");
+    }
     /// Determine whether this module has been instrumented with additional
     /// instructions that monitor the number of wasm operations executed
     /// during runtime.

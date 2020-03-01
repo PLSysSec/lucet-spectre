@@ -209,9 +209,10 @@ impl ContextHandle {
         fptr: usize,
         args: &[Val],
         heap: *mut core::ffi::c_void,
+        code: *const core::ffi::c_void,
     ) -> Result<ContextHandle, Error> {
         let mut child = ContextHandle::new();
-        Context::init(stack, &mut child, fptr, args, heap)?;
+        Context::init(stack, &mut child, fptr, args, heap, code)?;
         Ok(child)
     }
 }
@@ -371,6 +372,7 @@ impl Context {
         fptr: usize,
         args: &[Val],
         heap: *mut core::ffi::c_void,
+        code: *const core::ffi::c_void,
     ) -> Result<(), Error> {
         Context::init_with_callback(
             stack,
@@ -380,6 +382,7 @@ impl Context {
             fptr,
             args,
             heap,
+            code
         )
     }
 
@@ -399,6 +402,7 @@ impl Context {
         fptr: usize,
         args: &[Val],
         heap: *mut core::ffi::c_void,
+        code: *const core::ffi::c_void,
     ) -> Result<(), Error> {
         if !stack_is_aligned(stack) {
             return Err(Error::UnalignedStack);
@@ -481,6 +485,7 @@ impl Context {
 
         // testing out heap pinning
         child.gpr.r15 = heap as u64;
+        child.gpr.r14 = (code as u64) >> 32;
 
         // Read the mask to be restored if we ever need to jump out of a signal handler. If this
         // isn't possible, die.

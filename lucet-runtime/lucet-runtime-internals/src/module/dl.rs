@@ -203,6 +203,9 @@ impl DlModule {
 impl Module for DlModule {}
 
 impl ModuleInternal for DlModule {
+    fn get_code_segment(&self) -> *const c_void {
+        self.fbase
+    }
     fn is_instruction_count_instrumented(&self) -> bool {
         self.module.module_data.features().instruction_count
     }
