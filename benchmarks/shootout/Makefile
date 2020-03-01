@@ -40,7 +40,7 @@ bench: run
 
 .PHONY: run
 run: build
-	$(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	$(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
 
 .PHONY: build
 build: $(LUCETC)

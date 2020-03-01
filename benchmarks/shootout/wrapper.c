@@ -22,7 +22,10 @@ typedef struct LucetCtx_ {
 static LucetCtx lucet_setup(void)
 {
     struct lucet_dl_module *mod;
-    ASSERT_OK(lucet_dl_module_load(xstr(WASM_MODULE), &mod));
+    int err = lucet_dl_module_load(xstr(WASM_MODULE), &mod);
+    //printf("%s\n", lucet_error_name(err));
+    ASSERT_OK(err);
+    //ASSERT_OK(lucet_dl_module_load(xstr(WASM_MODULE), &mod));
     struct lucet_region *region;
     ASSERT_OK(lucet_test_region_create(1, NULL, &region));
     struct lucet_wasi_ctx *wasi_ctx = lucet_wasi_ctx_create();

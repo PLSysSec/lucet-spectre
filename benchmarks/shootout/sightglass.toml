@@ -1,9 +1,8 @@
 # Test suites to run
 test_suites = [
-  { name = "native", library_path = "./build/native/implementation.so" },
   { name = "lucet", library_path = "./build/lucet/implementation.so" },
   { name = "spectre", library_path = "./build/spectre/implementation.so" },
-  { name = "fence", library_path = "./build/fence/implementation.so" },
+  { name = "spectre-fence", library_path = "./build/fence/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
