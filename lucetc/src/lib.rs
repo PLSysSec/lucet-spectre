@@ -56,6 +56,7 @@ pub struct Lucetc {
     count_instructions: bool,
     canonicalize_nans: bool,
     pinned_heap: bool,
+    pinned_control_flow: bool,
 }
 
 pub trait AsLucetc {
@@ -119,6 +120,8 @@ pub trait LucetcOpts {
     fn with_canonicalize_nans(self, enable_canonicalize_nans: bool) -> Self;
     fn pinned_heap(&mut self, enable_pinned_heap: bool);
     fn with_pinned_heap(self, enable_pinned_heap: bool) -> Self;
+    fn pinned_control_flow(&mut self, enable_pinned_control_flow: bool);
+    fn with_pinned_control_flow(self, enable_pinned_control_flow: bool) -> Self;
 }
 
 impl<T: AsLucetc> LucetcOpts for T {
@@ -277,6 +280,15 @@ impl<T: AsLucetc> LucetcOpts for T {
         self.pinned_heap(enable_pinned_heap);
         self
     }
+
+    fn pinned_control_flow(&mut self, enable_pinned_control_flow: bool) {
+        self.as_lucetc().pinned_control_flow = enable_pinned_control_flow;
+    }
+
+    fn with_pinned_control_flow(mut self, enable_pinned_control_flow: bool) -> Self {
+        self.pinned_control_flow(enable_pinned_control_flow);
+        self
+    }
 }
 
 impl Lucetc {
@@ -298,6 +310,7 @@ impl Lucetc {
             count_instructions: false,
             canonicalize_nans: false,
             pinned_heap: false,
+            pinned_control_flow: false,
         }
     }
 
@@ -319,6 +332,7 @@ impl Lucetc {
             count_instructions: false,
             canonicalize_nans: false,
             pinned_heap: false,
+            pinned_control_flow: false,
         })
     }
 
@@ -364,6 +378,7 @@ impl Lucetc {
             &self.validator,
             self.canonicalize_nans,
             self.pinned_heap,
+            self.pinned_control_flow,
         )?;
         let obj = compiler.object_file()?;
         obj.write(output.as_ref())?;
@@ -385,6 +400,7 @@ impl Lucetc {
             &self.validator,
             self.canonicalize_nans,
             self.pinned_heap,
+            self.pinned_control_flow,
         )?;
 
         compiler.cranelift_funcs()?.write(&output)?;

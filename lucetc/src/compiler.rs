@@ -57,6 +57,7 @@ pub struct Compiler<'a> {
     module_translation_state: ModuleTranslationState,
     canonicalize_nans: bool,
     pinned_heap: bool,
+    pinned_control_flow: bool,
 }
 
 impl<'a> Compiler<'a> {
@@ -71,6 +72,7 @@ impl<'a> Compiler<'a> {
         validator: &Option<Validator>,
         canonicalize_nans: bool,
         pinned_heap: bool,
+        pinned_control_flow: bool,
     ) -> Result<Self, Error> {
         let isa = Self::target_isa(
             target.clone(),
@@ -78,6 +80,7 @@ impl<'a> Compiler<'a> {
             &cpu_features,
             canonicalize_nans,
             pinned_heap,
+            pinned_control_flow,
         )?;
 
         let frontend_config = isa.frontend_config();
@@ -136,6 +139,7 @@ impl<'a> Compiler<'a> {
             target,
             canonicalize_nans,
             pinned_heap,
+            pinned_control_flow,
         })
     }
 
@@ -250,6 +254,7 @@ impl<'a> Compiler<'a> {
                 &self.cpu_features,
                 self.canonicalize_nans,
                 self.pinned_heap,
+                self.pinned_control_flow,
             )?,
         ))
     }
@@ -260,6 +265,7 @@ impl<'a> Compiler<'a> {
         cpu_features: &CpuFeatures,
         canonicalize_nans: bool,
         pinned_heap: bool,
+        pinned_control_flow: bool,
     ) -> Result<Box<dyn TargetIsa>, Error> {
         let mut flags_builder = settings::builder();
         let isa_builder = cpu_features.isa_builder(target)?;
@@ -272,6 +278,9 @@ impl<'a> Compiler<'a> {
         if pinned_heap {
             flags_builder.enable("enable_pinned_reg").unwrap();
             flags_builder.enable("use_pinned_reg_as_heap_base").unwrap();
+            if pinned_control_flow {
+                flags_builder.enable("use_extra_pinned_reg_as_cs_base").unwrap();
+            }
         }
         Ok(isa_builder.finish(settings::Flags::new(flags_builder)))
     }
