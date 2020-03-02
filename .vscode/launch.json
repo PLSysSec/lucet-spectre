@@ -51,6 +51,7 @@
                 "--spectre-mitigations-enable",
                 "--pinned-heap-reg",
                 "--pinned-control-flow",
+                "--spectre-callbacks-workaround",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
