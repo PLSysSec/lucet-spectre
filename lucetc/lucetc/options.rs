@@ -232,6 +232,9 @@ impl Options {
             let spectre_mask_indirects_cf = m
                 .value_of("spectre_mask_indirects_cf")
                 .map(|m| m.parse::<bool>().unwrap());
+            let spectre_nacl_style_calls = m
+                .value_of("spectre_nacl_style_calls")
+                .map(|m| m.parse::<bool>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -247,6 +250,7 @@ impl Options {
                 spectre_mask_after_unspill,
                 spectre_align_basic_blocks,
                 spectre_mask_indirects_cf,
+                spectre_nacl_style_calls,
             );
         }
 
@@ -486,7 +490,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_baseline_loadfence_enable")
                     .long("--spectre-baseline-loadfence-enable")
                     .takes_value(false)
-                    .help("Enable baseline security mitigation of using a lfence before every load to protect against spectre vulnerabilities. This is only a baseline comparison for --spectre-mitigations-enable.")
+                    .help("Enable baseline security mitigation of using a lfence before every load to protect against spectre vulnerabilities. This is only a baseline comparison for --spectre-mitigations-enable. Not enabled by default --- for benchmarking only.")
             )
             .arg(
                 Arg::with_name("spectre_mitigations_enable")
@@ -546,7 +550,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_indirect_call_via_jump")
                 .long("--spectre-indirect-call-via-jump")
                 .takes_value(false)
-                .help("Whether to replace all indirect calls with jump instructions.")
+                .help("Whether to replace all indirect calls with jump instructions. Not enabled by default --- for benchmarking only.")
             )
             .arg(
                 Arg::with_name("spectre_mask_after_unspill")
@@ -565,6 +569,12 @@ SSE3 but not AVX:
                 .long("--spectre-mask-call-indirects")
                 .takes_value(false)
                 .help("Whether to mask all indirect control flow.")
+            )
+            .arg(
+                Arg::with_name("spectre_nacl_style_calls")
+                .long("--spectre-nacl-style-calls")
+                .takes_value(false)
+                .help("Whether to use nacl style function calls at the bottome of a transaction block. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
             )
             .arg(
                 Arg::with_name("keygen")
