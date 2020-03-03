@@ -7,7 +7,7 @@
 	url = https://github.com/webassembly/spec
 [submodule "sightglass"]
 	path = sightglass
-	url = https://github.com/fastly/sightglass
+	url = git@github.com:PLSysSec/sightglass-spectre
 [submodule "wasi"]
 	path = wasi
 	url = https://github.com/webassembly/wasi
