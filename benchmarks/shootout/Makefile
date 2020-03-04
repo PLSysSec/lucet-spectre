@@ -27,6 +27,8 @@ SHOOTOUT_NATIVE_CFLAGS:=-march=native -fPIC \
 	-DIMPL_REFERENCE -DUSE_LEND \
 	-Dmalloc=lend_malloc -Dcalloc=lend_calloc -Dfree=lend_free
 
+SENSIVITYRANGE:=1 2 3 4 5
+
 BINARYEN_VERSION=86
 
 ifdef CI
@@ -42,9 +44,11 @@ bench: run
 run: build
 	$(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
 
+run_sensitivity: build_sensitivity
+	$(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
+
 .PHONY: build
 build: $(LUCETC)
-build: build/native/implementation.so
 build: build/lucet/implementation.so
 build: build/lucet/module.so
 build: build/spectre/implementation.so
@@ -53,94 +57,81 @@ build: build/fence/implementation.so
 build: build/fence/module.so
 build: $(LUCET_ROOT)/target/release/sightglass
 
-# With the xenial gcc (5.4.0) this pins the CPU for minutes if above -O1, so its getting downgraded to -O1
-build/native/shootout/switch2.o: $(SHOOTOUT)/switch2.c
-	@mkdir -p $(@D)
-	$(CC) $(SHOOTOUT_NATIVE_CFLAGS) $(COMMON_CFLAGS) -O1 -c $^ -o $@
+build_sensitivity: $(addsuffix /implementation.so, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))
+build_sensitivity: $(addsuffix /module.so, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))	
 
-build/native/shootout/%.o: $(SHOOTOUT)/%.c
-	@mkdir -p $(@D)
-	$(CC) $(SHOOTOUT_NATIVE_CFLAGS) $(COMMON_CFLAGS) -c $^ -o $@
-
-build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(CC) -shared -o $@ $^
-
-build/lucet/shootout/%.o: $(SHOOTOUT)/%.c
+build/wasm/shootout/%.o: $(SHOOTOUT)/%.c
 	@mkdir -p $(@D)
 	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
 
-build/spectre/shootout/%.o: $(SHOOTOUT)/%.c
-	@mkdir -p $(@D)
-	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
+#build/fence/shootout/%.o: $(SHOOTOUT)/%.c
+#	@mkdir -p $(@D)
+#	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
 
-build/fence/shootout/%.o: $(SHOOTOUT)/%.c
-	@mkdir -p $(@D)
-	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
-
-build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+build/wasm/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/wasm/shootout/, $(notdir $(SHOOTOUT_SRCS))))
 	@mkdir -p $(@D)
 	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
 
-build/lucet/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/spectre/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/spectre/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/spectre/module.wasm: build/spectre/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/fence/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/fence/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/fence/module.wasm: build/fence/module.wasm.unoptimized
+build/wasm/module.wasm: build/wasm/module.wasm.unoptimized
 	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
 
 # Don't emit the shared object, we need a saparate link step below.
-build/lucet/module.o: build/lucet/module.wasm $(LIBBUILTINS)
+build/lucet/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/lucet/module.wasm -o $@
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
-build/spectre/module.o: build/spectre/module.wasm $(LIBBUILTINS)
+build/spectre/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/spectre/module.wasm -o $@
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
-build/fence/module.o: build/fence/module.wasm $(LIBBUILTINS)
+build/sensitivity1/module.o: build/wasm/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=1 --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
+
+build/sensitivity2/module.o: build/wasm/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=2 --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
+
+build/sensitivity3/module.o: build/wasm/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=3 --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
+
+build/sensitivity4/module.o: build/wasm/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=4 --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
+
+build/sensitivity5/module.o: build/wasm/module.wasm $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=5 --emit=obj \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
+
+
+build/fence/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) $(FENCE_FLAGS) --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/fence/module.wasm -o $@
-
-build/lucet/module.clif: build/lucet/module.wasm $(LIBBUILTINS)
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/lucet/module.wasm -o $@
-
-build/spectre/module.clif: build/spectre/module.wasm $(LIBBUILTINS)
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --emit=clif \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/spectre/module.wasm -o $@
-
-build/fence/module.clif: build/fence/module.wasm $(LIBBUILTINS)
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) $(FENCE_FLAGS) --emit=clif \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		--builtins=$(LIBBUILTINS) build/fence/module.wasm -o $@
+		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
 # Because liblucet-runtime-c is dynamically loaded (transitively) by implementation.so, we
 # need to link the wasm object to the same libraries.
@@ -158,6 +149,41 @@ build/spectre/module.so: build/spectre/module.o
 		-Wl,-rpath $(dir $(LIBBUILTINS)) \
 		build/spectre/module.o -lbuiltins -o $@
 
+build/sensitivity1/module.so: build/sensitivity1/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity1/module.o -lbuiltins -o $@
+
+build/sensitivity2/module.so: build/sensitivity2/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity2/module.o -lbuiltins -o $@
+
+build/sensitivity3/module.so: build/sensitivity3/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity3/module.o -lbuiltins -o $@
+
+build/sensitivity4/module.so: build/sensitivity4/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity4/module.o -lbuiltins -o $@
+
+build/sensitivity5/module.so: build/sensitivity5/module.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity5/module.o -lbuiltins -o $@
+
 build/fence/module.so: build/fence/module.o
 	@mkdir -p $(@D)
 	$(CC) -rdynamic -shared \
@@ -174,7 +200,6 @@ build/lucet/%.o: %.c
 		-DWASM_MODULE=$(abspath build/lucet/module.so) \
 		-c $^ -o $@
 
-
 build/spectre/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
@@ -184,6 +209,50 @@ build/spectre/%.o: %.c
 		-DWASM_MODULE=$(abspath build/spectre/module.so) \
 		-c $^ -o $@
 
+build/sensitivity1/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sensitivity1/module.so) \
+		-c $^ -o $@
+
+build/sensitivity2/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sensitivity2/module.so) \
+		-c $^ -o $@
+
+build/sensitivity3/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sensitivity3/module.so) \
+		-c $^ -o $@
+
+build/sensitivity4/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sensitivity4/module.so) \
+		-c $^ -o $@
+
+build/sensitivity5/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sensitivity5/module.so) \
+		-c $^ -o $@
 
 build/fence/%.o: %.c
 	@mkdir -p $(@D)
@@ -223,7 +292,58 @@ build/spectre/implementation.so: $(LIBBUILTINS)
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
 
+build/sensitivity1/implementation.so: $(addsuffix /wrapper.o, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))
+build/sensitivity1/implementation.so: $(addsuffix /hostcalls.o, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))
 
+build/sensitivity1/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity1/wrapper.o build/sensitivity1/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
+
+build/sensitivity2/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity2/wrapper.o build/sensitivity2/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
+
+build/sensitivity3/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity3/wrapper.o build/sensitivity3/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
+
+build/sensitivity4/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity4/wrapper.o build/sensitivity4/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
+
+build/sensitivity5/implementation.so: $(LIBBUILTINS)
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		-L $(dir $(LIBBUILTINS)) \
+		-Wl,-rpath $(dir $(LIBBUILTINS)) \
+		build/sensitivity5/wrapper.o build/sensitivity5/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
 
 build/fence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
 build/fence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
@@ -238,7 +358,6 @@ build/fence/implementation.so: $(LIBBUILTINS)
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		-llucet_runtime -llucet_wasi -ldl -lbuiltins -o $@
-
 
 $(LUCET_ROOT)/target/release/sightglass:
 	cargo build --release -p sightglass
