@@ -128,11 +128,11 @@ impl DlModule {
         if !module_version.valid() {
             return Err(lucet_incorrect_module!("reserved bit is not set. This module is likely too old for this lucet-runtime to load."));
         } else if !runtime_version.compatible_with(&module_version) {
-            return Err(lucet_incorrect_module!(
-                "version mismatch. module has version {}, while this runtime is version {}",
-                module_version,
-                runtime_version,
-            ));
+            // return Err(lucet_incorrect_module!(
+            //     "version mismatch. module has version {}, while this runtime is version {}",
+            //     module_version,
+            //     runtime_version,
+            // ));
         }
 
         // Deserialize the slice into ModuleData, which will hold refs into the loaded

@@ -202,22 +202,42 @@ impl Options {
             let spectre_tblocks_in_ablock = m
                 .value_of("spectre_tblocks_in_ablock")
                 .map(|m| m.parse::<u32>().unwrap());
-            let spectre_function_align_enable = if m.is_present("spectre_function_align_enable") { Some(true) } else { None };
-            let spectre_tblock_enable = if m.is_present("spectre_tblock_enable") { Some(true) } else { None };
-            let spectre_direct_branch_align_enable = if m.is_present("spectre_direct_branch_align_enable") { Some(true) } else { None };
+            let spectre_function_align_enable = m
+                .value_of("spectre_function_align_enable")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_tblock_enable = m
+                .value_of("spectre_tblock_enable")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_direct_branch_align_enable = m
+                .value_of("spectre_direct_branch_align_enable")
+                .map(|m| m.parse::<bool>().unwrap());
             let spectre_direct_branch_align = m
                 .value_of("spectre_direct_branch_align")
                 .map(|m| m.parse::<u32>().unwrap());
-            let spectre_indirect_branch_align_enable = if m.is_present("spectre_indirect_branch_align_enable") { Some(true) } else { None };
+            let spectre_indirect_branch_align_enable = m
+                .value_of("spectre_indirect_branch_align_enable")
+                .map(|m| m.parse::<bool>().unwrap());
             let spectre_indirect_branch_align = m
                 .value_of("spectre_indirect_branch_align")
                 .map(|m| m.parse::<u32>().unwrap());
-            let spectre_indirect_call_via_jump = if m.is_present("spectre_indirect_call_via_jump") { Some(true) } else { None };
-            let spectre_mask_after_unspill = if m.is_present("spectre_mask_after_unspill") { Some(true) } else { None };
-            let spectre_align_basic_blocks = if m.is_present("spectre_align_basic_blocks") { Some(true) } else { None };
-            let spectre_mask_indirects_cf = if m.is_present("spectre_mask_indirects_cf") { Some(true) } else { None };
-            let spectre_nacl_style_calls = if m.is_present("spectre_nacl_style_calls") { Some(true) } else { None };
-            let spectre_callbacks_workaround = if m.is_present("spectre_callbacks_workaround") { Some(true) } else { None };
+            let spectre_indirect_call_via_jump = m
+                .value_of("spectre_indirect_call_via_jump")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_mask_after_unspill = m
+                .value_of("spectre_mask_after_unspill")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_align_basic_blocks = m
+                .value_of("spectre_align_basic_blocks")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_mask_indirects_cf = m
+                .value_of("spectre_mask_indirects_cf")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_nacl_style_calls = m
+                .value_of("spectre_nacl_style_calls")
+                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_callbacks_workaround = m
+                .value_of("spectre_callbacks_workaround")
+                .map(|m| m.parse::<bool>().unwrap());
 
             cranelift_spectre::settings::use_spectre_mitigation_settings(
                 spectre_mitigations_enable,
@@ -497,19 +517,19 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_function_align_enable")
                     .long("--spectre-function-align-enable")
-                    .takes_value(false)
+                    .takes_value(true)
                     .help("Whether to align the each function."),
             )
             .arg(
                 Arg::with_name("spectre_tblock_enable")
                     .long("--spectre-tblock-enable")
-                    .takes_value(false)
+                    .takes_value(true)
                     .help("Whether to use transaction blocks."),
             )
             .arg(
                 Arg::with_name("spectre_direct_branch_align_enable")
                     .long("--spectre-direct-branch-align-enable")
-                    .takes_value(false)
+                    .takes_value(true)
                     .help("Whether to align the direct branch instructions."),
             )
             .arg(
@@ -521,7 +541,7 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_indirect_branch_align_enable")
                 .long("--spectre-indirect-branch-align-enable")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to align the indirect branch instructions.")
             )
             .arg(
@@ -533,37 +553,37 @@ SSE3 but not AVX:
             .arg(
                 Arg::with_name("spectre_indirect_call_via_jump")
                 .long("--spectre-indirect-call-via-jump")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to replace all indirect calls with jump instructions. Not enabled by default --- for benchmarking only.")
             )
             .arg(
                 Arg::with_name("spectre_mask_after_unspill")
                 .long("--spectre-mask-after-unspill")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to mask all registers after unspilling.")
             )
             .arg(
                 Arg::with_name("spectre_align_basic_blocks")
                 .long("--spectre-align-basic-blocks")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to align all basic blocks.")
             )
             .arg(
                 Arg::with_name("spectre_mask_indirects_cf")
                 .long("--spectre-mask-call-indirects")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to mask all indirect control flow.")
             )
             .arg(
                 Arg::with_name("spectre_nacl_style_calls")
                 .long("--spectre-nacl-style-calls")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Whether to use nacl style function calls at the bottome of a transaction block. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
             )
             .arg(
                 Arg::with_name("spectre_callbacks_workaround")
                 .long("--spectre-callbacks-workaround")
-                .takes_value(false)
+                .takes_value(true)
                 .help("Workaround to disable code segment masking to support callbacks. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
             )
             .arg(

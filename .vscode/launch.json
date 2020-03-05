@@ -109,6 +109,28 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "lucetc_ablockonly",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigations-enable",
+                "--spectre-tblock-enable", "false",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "lucet-wasi",
             "program": "${workspaceFolder}/target/debug/lucet-wasi",
             "args": [
