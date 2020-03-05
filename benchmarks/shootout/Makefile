@@ -42,11 +42,11 @@ bench: run
 
 .PHONY: run
 run: build
-	$(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
 	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv 
 
 run_sensitivity: build_sensitivity
-	$(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
+	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
 	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv 
 
 
