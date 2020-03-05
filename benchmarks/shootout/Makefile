@@ -95,35 +95,35 @@ build/spectre/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 
 build/sensitivity1/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=1 --emit=obj \
+	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --spectre-tblocks-in-ablock=1 --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
 build/sensitivity2/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=2 --emit=obj \
+	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --spectre-tblocks-in-ablock=2 --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
 build/sensitivity3/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=3 --emit=obj \
+	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --spectre-tblocks-in-ablock=3 --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
 build/sensitivity4/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=4 --emit=obj \
+	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --spectre-tblocks-in-ablock=4 --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
 
 build/sensitivity5/module.o: build/wasm/module.wasm $(LIBBUILTINS)
 	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --spectre-tblocks-in-ablock=5 --emit=obj \
+	$(LUCETC) $(LUCETC_FLAGS) $(SPECTRE_FLAGS) --spectre-tblocks-in-ablock=5 --emit=obj \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		--builtins=$(LIBBUILTINS) build/wasm/module.wasm -o $@
