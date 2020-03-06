@@ -15,8 +15,8 @@
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "../sfi-spectre-testing/out/test.wasm",
-                "-o", "../sfi-spectre-testing/out/test.o",
+                "../out/sfi-spectre-test/test.wasm",
+                "-o", "../out/sfi-spectre-test/test.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -34,8 +34,8 @@
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "../sfi-spectre-testing/out/test.wasm",
-                "-o", "../sfi-spectre-testing/out/test_spectre_baseline.o",
+                "../out/sfi-spectre-test/test.wasm",
+                "-o", "../out/sfi-spectre-test/test_spectre_baseline.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -76,8 +76,8 @@
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "../sfi-spectre-testing/out/libpng/pngtest.wasm",
-                "-o", "../sfi-spectre-testing/out/libpng/pngtest_spectre.o",
+                "../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -98,8 +98,31 @@
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "../sfi-spectre-testing/out/libpng/pngtest.wasm",
-                "-o", "../sfi-spectre-testing/out/libpng/pngtest_spectre.o",
+                "../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "lucetc_spectre_cet_png",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigations-enable",
+                "--pinned-heap-reg",
+                "--pinned-control-flow",
+                "--spectre-tblock-protection", "cet",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -113,7 +136,7 @@
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigations-enable",
-                "--spectre-tblock-enable", "false",
+                "--spectre-tblock-protection", "none",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
