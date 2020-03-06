@@ -126,6 +126,24 @@ pub struct Options {
     pub target: Triple,
 }
 
+arg_enum!{
+    #[derive(PartialEq, Debug, Clone)]
+    pub enum TBlockProtection
+    {
+        NONE, PADDING, CET
+    }
+}
+
+impl Into<cranelift_spectre::settings::TBlockProtection> for TBlockProtection {
+    fn into(self) -> cranelift_spectre::settings::TBlockProtection {
+        match self {
+            TBlockProtection::NONE => cranelift_spectre::settings::TBlockProtection::NONE,
+            TBlockProtection::PADDING => cranelift_spectre::settings::TBlockProtection::PADDING,
+            TBlockProtection::CET => cranelift_spectre::settings::TBlockProtection::CET,
+        }
+    }
+}
+
 impl Options {
     pub fn from_args(m: &ArgMatches<'_>) -> Result<Self, Error> {
         let input: Vec<PathBuf> = m
@@ -205,9 +223,9 @@ impl Options {
             let spectre_function_align_enable = m
                 .value_of("spectre_function_align_enable")
                 .map(|m| m.parse::<bool>().unwrap());
-            let spectre_tblock_enable = m
-                .value_of("spectre_tblock_enable")
-                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_tblock_protection = m
+                .value_of("spectre_tblock_protection")
+                .map(|m| m.parse::<TBlockProtection>().unwrap());
             let spectre_direct_branch_align_enable = m
                 .value_of("spectre_direct_branch_align_enable")
                 .map(|m| m.parse::<bool>().unwrap());
@@ -244,7 +262,7 @@ impl Options {
                 spectre_tblock_size,
                 spectre_tblocks_in_ablock,
                 spectre_function_align_enable,
-                spectre_tblock_enable,
+                spectre_tblock_protection.map(|m| m.into()),
                 spectre_direct_branch_align_enable,
                 spectre_direct_branch_align,
                 spectre_indirect_branch_align_enable,
@@ -521,10 +539,10 @@ SSE3 but not AVX:
                     .help("Whether to align the each function."),
             )
             .arg(
-                Arg::with_name("spectre_tblock_enable")
-                    .long("--spectre-tblock-enable")
+                Arg::with_name("spectre_tblock_protection")
+                    .long("--spectre-tblock-protection")
                     .takes_value(true)
-                    .help("Whether to use transaction blocks."),
+                    .help("What scheme to use to protect transaction blocks."),
             )
             .arg(
                 Arg::with_name("spectre_direct_branch_align_enable")
