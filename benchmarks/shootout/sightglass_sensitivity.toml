@@ -1,10 +1,11 @@
 # Test suites to run
 test_suites = [
-  { name = "s1", library_path = "./build/sensitivity1/implementation.so" },
-  { name = "s2", library_path = "./build/sensitivity2/implementation.so" },
-  { name = "s3", library_path = "./build/sensitivity3/implementation.so" },
-  { name = "s4", library_path = "./build/sensitivity4/implementation.so" },
-  { name = "s5", library_path = "./build/sensitivity5/implementation.so" },
+  { name = "lucet", library_path = "./build/lucet/implementation.so" },
+  { name = "tblocks_in_ablock_1", library_path = "./build/sensitivity1/implementation.so" },
+  { name = "tblocks_in_ablock_2", library_path = "./build/sensitivity2/implementation.so" },
+  { name = "tblocks_in_ablock_3", library_path = "./build/sensitivity3/implementation.so" },
+  { name = "tblocks_in_ablock_4", library_path = "./build/sensitivity4/implementation.so" },
+  { name = "tblocks_in_ablock_5", library_path = "./build/sensitivity5/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)

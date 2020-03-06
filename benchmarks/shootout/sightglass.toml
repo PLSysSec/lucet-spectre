@@ -1,7 +1,7 @@
 # Test suites to run
 test_suites = [
   { name = "lucet", library_path = "./build/lucet/implementation.so" },
-  { name = "spectre", library_path = "./build/spectre/implementation.so" },
+  { name = "spectre-align", library_path = "./build/spectre/implementation.so" },
   { name = "spectre-fence", library_path = "./build/fence/implementation.so" },
 ]
 

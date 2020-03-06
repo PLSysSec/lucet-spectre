@@ -43,11 +43,13 @@ bench: run
 .PHONY: run
 run: build
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv 
+	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv
+	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(shell date --iso=seconds)  
 
 run_sensitivity: build_sensitivity
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
 	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv 
+	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(shell date --iso=seconds)  
 
 
 .PHONY: build
@@ -60,7 +62,7 @@ build: build/fence/implementation.so
 build: build/fence/module.so
 build: $(LUCET_ROOT)/target/release/sightglass
 
-build_sensitivity: $(addsuffix /implementation.so, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))
+build_sensitivity: $(addsuffix /implementation.so, $(addprefix build/sensitivity, $(SENSIVITYRANGE) )) build/lucet/implementation.so  build/lucet/module.so
 build_sensitivity: $(addsuffix /module.so, $(addprefix build/sensitivity, $(SENSIVITYRANGE) ))	
 
 build/wasm/shootout/%.o: $(SHOOTOUT)/%.c
