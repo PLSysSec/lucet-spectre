@@ -31,6 +31,8 @@ SENSIVITYRANGE:=1 2 3 4 5
 
 BINARYEN_VERSION=86
 
+TIMESTAMP:=$(shell date --iso=seconds)
+
 ifdef CI
 	SIGHTGLASS_ARGS:=--quick
 endif
@@ -43,13 +45,23 @@ bench: run
 .PHONY: run
 run: build
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv
+	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py /tmp/results-latest.csv
 	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(shell date --iso=seconds)  
 
 run_sensitivity: build_sensitivity
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
-	python3 ../../../sfi-spectre-testing/scripts/shootglass_stats.py /tmp/results-latest.csv 
+	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py /tmp/results-latest.csv
 	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(shell date --iso=seconds)  
+
+run_all: build build_sensitivity
+	echo timestamp_$(TIMESTAMP)
+	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(TIMESTAMP)
+	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(TIMESTAMP)
+	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py ../../../sfi-spectre-testing/benchmarks/sightglass_$(TIMESTAMP) ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(TIMESTAMP)
+
+
 
 
 .PHONY: build
