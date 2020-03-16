@@ -55,11 +55,12 @@ run_sensitivity: build_sensitivity
 
 run_all: build build_sensitivity
 	echo timestamp_$(TIMESTAMP)
+	mkdir -p ../../../benchmarks
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(TIMESTAMP)
+	mv /tmp/results-latest.csv ../../../benchmarks/sightglass_$(TIMESTAMP)
 	taskset -c 1 $(LUCET_ROOT)/target/debug/sightglass -c sightglass_sensitivity.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(TIMESTAMP)
-	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py ../../../sfi-spectre-testing/benchmarks/sightglass_$(TIMESTAMP) ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(TIMESTAMP)
+	mv /tmp/results-latest.csv ../../../benchmarks/sightglass_sensitivity_$(TIMESTAMP)
+	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py ../../../benchmarks/sightglass_$(TIMESTAMP) ../../../sfi-spectre-testing/benchmarks/sightglass_sensitivity_$(TIMESTAMP)
 
 
 
