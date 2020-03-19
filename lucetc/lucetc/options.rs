@@ -134,12 +134,30 @@ arg_enum!{
     }
 }
 
+arg_enum!{
+    #[derive(PartialEq, Debug, Clone)]
+    pub enum HeapProtection
+    {
+        NONE, MASKAFTERUNSPILL, MPK
+    }
+}
+
 impl Into<cranelift_spectre::settings::TBlockProtection> for TBlockProtection {
     fn into(self) -> cranelift_spectre::settings::TBlockProtection {
         match self {
             TBlockProtection::NONE => cranelift_spectre::settings::TBlockProtection::NONE,
             TBlockProtection::PADDING => cranelift_spectre::settings::TBlockProtection::PADDING,
             TBlockProtection::CET => cranelift_spectre::settings::TBlockProtection::CET,
+        }
+    }
+}
+
+impl Into<cranelift_spectre::settings::HeapProtection> for HeapProtection {
+    fn into(self) -> cranelift_spectre::settings::HeapProtection {
+        match self {
+            HeapProtection::NONE => cranelift_spectre::settings::HeapProtection::NONE,
+            HeapProtection::MASKAFTERUNSPILL => cranelift_spectre::settings::HeapProtection::MASKAFTERUNSPILL,
+            HeapProtection::MPK => cranelift_spectre::settings::HeapProtection::MPK,
         }
     }
 }
@@ -241,9 +259,9 @@ impl Options {
             let spectre_indirect_call_via_jump = m
                 .value_of("spectre_indirect_call_via_jump")
                 .map(|m| m.parse::<bool>().unwrap());
-            let spectre_mask_after_unspill = m
-                .value_of("spectre_mask_after_unspill")
-                .map(|m| m.parse::<bool>().unwrap());
+            let spectre_heap_protection = m
+                .value_of("spectre_heap_protection")
+                .map(|m| m.parse::<HeapProtection>().unwrap());
             let spectre_align_basic_blocks = m
                 .value_of("spectre_align_basic_blocks")
                 .map(|m| m.parse::<bool>().unwrap());
@@ -268,7 +286,7 @@ impl Options {
                 spectre_indirect_branch_align_enable,
                 spectre_indirect_branch_align,
                 spectre_indirect_call_via_jump,
-                spectre_mask_after_unspill,
+                spectre_heap_protection.map(|m| m.into()),
                 spectre_align_basic_blocks,
                 spectre_mask_indirects_cf,
                 spectre_nacl_style_calls,
@@ -542,7 +560,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_tblock_protection")
                     .long("--spectre-tblock-protection")
                     .takes_value(true)
-                    .help("What scheme to use to protect transaction blocks."),
+                    .help("What scheme to use to protect transaction blocks: cet, padding or none."),
             )
             .arg(
                 Arg::with_name("spectre_direct_branch_align_enable")
@@ -575,10 +593,10 @@ SSE3 but not AVX:
                 .help("Whether to replace all indirect calls with jump instructions. Not enabled by default --- for benchmarking only.")
             )
             .arg(
-                Arg::with_name("spectre_mask_after_unspill")
-                .long("--spectre-mask-after-unspill")
+                Arg::with_name("spectre_heap_protection")
+                .long("--spectre-heap-protection")
                 .takes_value(true)
-                .help("Whether to mask all registers after unspilling.")
+                .help("What form of heap protection to use: maskafterunspill, mpk or none.")
             )
             .arg(
                 Arg::with_name("spectre_align_basic_blocks")

@@ -51,7 +51,7 @@
                 "--spectre-mitigations-enable",
                 "--pinned-heap-reg",
                 "--pinned-control-flow",
-                "--spectre-callbacks-workaround",
+                "--spectre-callbacks-workaround", "true",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
@@ -163,6 +163,30 @@
                 "--dir", "/:/",
                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre.so"
 
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "lucetc_spectre_cet_mpk",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigations-enable",
+                "--pinned-heap-reg",
+                "--pinned-control-flow",
+                "--spectre-tblock-protection", "cet",
+                "--spectre-heap-protection", "mpk",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "../out/sfi-spectre-test/basic_test/test.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
