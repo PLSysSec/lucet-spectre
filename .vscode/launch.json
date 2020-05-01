@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "png_strawman",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigation", "strawman",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre_strawman.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
+    ]
+}

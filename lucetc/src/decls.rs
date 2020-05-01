@@ -253,8 +253,7 @@ impl<'a> ModuleDecls<'a> {
         let mut table_names = PrimaryMap::new();
         for ix in 0..info.tables.len() {
             let def_symbol = format!("guest_table_{}", ix);
-            let def_data_id =
-                clif_module.declare_data(&def_symbol, Linkage::Export, true, None)?;
+            let def_data_id = clif_module.declare_data(&def_symbol, Linkage::Export, true, None)?;
             let def_name = Name::new_data(def_symbol, def_data_id);
 
             table_names.push(def_name);
