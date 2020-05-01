@@ -124,6 +124,23 @@ pub struct Options {
     pub target: Triple,
 }
 
+arg_enum!{
+    #[derive(PartialEq, Debug, Clone)]
+    pub enum SpectreMitigation {
+        NONE,
+        STRAWMAN,
+    }
+}
+
+impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation {
+    fn into(self) -> cranelift_spectre::settings::SpectreMitigation {
+        match self {
+            SpectreMitigation::NONE => cranelift_spectre::settings::SpectreMitigation::NONE,
+            SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
+        }
+    }
+}
+
 impl Options {
     pub fn from_args(m: &ArgMatches<'_>) -> Result<Self, Error> {
         let input: Vec<PathBuf> = m
@@ -187,6 +204,14 @@ impl Options {
             Some("2") | Some("speed_and_size") => OptLevel::SpeedAndSize,
             Some(_) => panic!("unknown value for opt-level"),
         };
+
+        let spectre_mitigation = m
+        .value_of("spectre_mitigation")
+        .map(|m| m.parse::<SpectreMitigation>().unwrap());
+
+        cranelift_spectre::settings::use_spectre_mitigation_settings(
+            spectre_mitigation.map(|m| m.into()),
+        );
 
         let target = match m.value_of("target") {
             None => Triple::host(),
@@ -415,6 +440,12 @@ SSE3 but not AVX:
                     .takes_value(true)
                     .possible_values(&["0", "1", "2", "none", "speed", "speed_and_size"])
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
+            )
+            .arg(
+                Arg::with_name("spectre_mitigation")
+                    .long("--spectre-mitigation")
+                    .takes_value(true)
+                    .help("What scheme to use to protect from spectre attacks: none, strawman, sfi, or cet."),
             )
             .arg(
                 Arg::with_name("keygen")
