@@ -125,10 +125,11 @@ pub struct Options {
     pub target: Triple,
 }
 
-arg_enum!{
+arg_enum! {
     #[derive(PartialEq, Debug, Clone)]
     pub enum SpectreMitigation {
         NONE,
+        LOADLFENCE,
         STRAWMAN,
     }
 }
@@ -137,6 +138,9 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
     fn into(self) -> cranelift_spectre::settings::SpectreMitigation {
         match self {
             SpectreMitigation::NONE => cranelift_spectre::settings::SpectreMitigation::NONE,
+            SpectreMitigation::LOADLFENCE => {
+                cranelift_spectre::settings::SpectreMitigation::LOADLFENCE
+            }
             SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
         }
     }
@@ -207,8 +211,8 @@ impl Options {
         };
 
         let spectre_mitigation = m
-        .value_of("spectre_mitigation")
-        .map(|m| m.parse::<SpectreMitigation>().unwrap());
+            .value_of("spectre_mitigation")
+            .map(|m| m.parse::<SpectreMitigation>().unwrap());
 
         cranelift_spectre::settings::use_spectre_mitigation_settings(
             spectre_mitigation.map(|m| m.into()),
@@ -448,7 +452,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, strawman, sfi, or cet."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence(lfence after all loads), strawman, sfi, or cet."),
             )
             .arg(
                 Arg::with_name("keygen")
