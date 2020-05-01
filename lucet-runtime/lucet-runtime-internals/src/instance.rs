@@ -1197,8 +1197,7 @@ impl Instance {
         res
     }
 
-    pub fn set_current_instance(&mut self)
-    {
+    pub fn set_current_instance(&mut self) {
         // there should never be another instance running on this thread when we enter this function
         CURRENT_INSTANCE.with(|current_instance| {
             let mut current_instance = current_instance.borrow_mut();
@@ -1207,8 +1206,7 @@ impl Instance {
         });
     }
 
-    pub fn clear_current_instance(&mut self)
-    {
+    pub fn clear_current_instance(&mut self) {
         CURRENT_INSTANCE.with(|current_instance| {
             *current_instance.borrow_mut() = None;
         });
