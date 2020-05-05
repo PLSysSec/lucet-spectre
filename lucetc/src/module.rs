@@ -350,7 +350,25 @@ impl<'a> ModuleEnvironment<'a> for ModuleInfo<'a> {
         offset: usize,
         elements: Box<[FuncIndex]>,
     ) -> WasmResult<()> {
-        let elements_vec: Vec<FuncIndex> = elements.into();
+        let mut elements_vec: Vec<FuncIndex> = elements.into();
+
+        let mitigation = cranelift_spectre::settings::get_spectre_mitigation();
+        if mitigation == cranelift_spectre::settings::SpectreMitigation::SFI {
+            let next_power_of_two_minus_1 = |val: usize| -> usize {
+                let next_power_of_two = val.next_power_of_two();
+                let common = next_power_of_two - 1;
+                if common >= val {
+                    common
+                } else {
+                    (next_power_of_two * 2) - 1
+                }
+            };
+            let curr_len = elements_vec.len();
+            let rounded = next_power_of_two_minus_1(curr_len);
+            for _i in curr_len..rounded {
+                elements_vec.push(elements_vec.last().unwrap().clone());
+            }
+        }
         let uniquified_elements = elements_vec
             .into_iter()
             .map(|fn_idx| {
