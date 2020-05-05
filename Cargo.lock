@@ -364,6 +364,7 @@ dependencies = [
  "cranelift-codegen 0.51.0",
  "cranelift-entity 0.51.0",
  "cranelift-frontend 0.51.0",
+ "cranelift-spectre 0.1.0",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmparser 0.39.3 (registry+https://github.com/rust-lang/crates.io-index)",
