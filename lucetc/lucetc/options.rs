@@ -132,6 +132,7 @@ arg_enum! {
         LOADLFENCE,
         STRAWMAN,
         SFI,
+        CET,
     }
 }
 
@@ -144,6 +145,7 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
             }
             SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
             SpectreMitigation::SFI => cranelift_spectre::settings::SpectreMitigation::SFI,
+            SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
         }
     }
 }

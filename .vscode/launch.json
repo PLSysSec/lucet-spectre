@@ -97,5 +97,26 @@
                 }
             ]
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "test_cet",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigation", "cet",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_cet.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
     ]
 }
