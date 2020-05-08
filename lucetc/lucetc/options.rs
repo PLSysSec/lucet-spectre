@@ -133,6 +133,7 @@ arg_enum! {
         STRAWMAN,
         SFI,
         CET,
+        BLADE,
     }
 }
 
@@ -146,6 +147,7 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
             SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
             SpectreMitigation::SFI => cranelift_spectre::settings::SpectreMitigation::SFI,
             SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
+            SpectreMitigation::BLADE => cranelift_spectre::settings::SpectreMitigation::BLADE,
         }
     }
 }
@@ -458,7 +460,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, loadlfence(lfence after all loads), strawman, sfi, or cet."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet, or blade."),
             )
             .arg(
                 Arg::with_name("keygen")
