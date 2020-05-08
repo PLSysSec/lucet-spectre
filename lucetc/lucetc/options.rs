@@ -460,7 +460,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, loadlfence(lfence after all loads), strawman, sfi, or cet."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet, or blade."),
             )
             .arg(
                 Arg::with_name("keygen")
