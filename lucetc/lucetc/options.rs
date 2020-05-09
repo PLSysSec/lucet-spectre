@@ -133,6 +133,13 @@ arg_enum! {
         STRAWMAN,
         SFI,
         CET,
+    }
+}
+
+arg_enum! {
+    #[derive(PartialEq, Debug, Clone)]
+    pub enum SpectrePHTMitigation {
+        NONE,
         BLADE,
     }
 }
@@ -147,7 +154,15 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
             SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
             SpectreMitigation::SFI => cranelift_spectre::settings::SpectreMitigation::SFI,
             SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
-            SpectreMitigation::BLADE => cranelift_spectre::settings::SpectreMitigation::BLADE,
+        }
+    }
+}
+
+impl Into<cranelift_spectre::settings::SpectrePHTMitigation> for SpectrePHTMitigation {
+    fn into(self) -> cranelift_spectre::settings::SpectrePHTMitigation {
+        match self {
+            SpectrePHTMitigation::NONE => cranelift_spectre::settings::SpectrePHTMitigation::NONE,
+            SpectrePHTMitigation::BLADE => cranelift_spectre::settings::SpectrePHTMitigation::BLADE,
         }
     }
 }
@@ -221,8 +236,20 @@ impl Options {
             .value_of("spectre_mitigation")
             .map(|m| m.parse::<SpectreMitigation>().unwrap());
 
+        let mut spectre_pht_mitigation = m
+            .value_of("spectre_pht_mitigation")
+            .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
+
+        if spectre_pht_mitigation.is_none()
+            && (spectre_mitigation == SpectreMitigation::SFI.into()
+                || spectre_mitigation == SpectreMitigation::CET.into())
+        {
+            spectre_pht_mitigation = Some(SpectrePHTMitigation::BLADE);
+        }
+
         cranelift_spectre::settings::use_spectre_mitigation_settings(
             spectre_mitigation.clone().map(|m| m.into()),
+            spectre_pht_mitigation.clone().map(|m| m.into()),
         );
 
         let target = match m.value_of("target") {
@@ -460,7 +487,13 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet, or blade."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet."),
+            )
+            .arg(
+                Arg::with_name("spectre_pht_mitigation")
+                    .long("--spectre-pht-mitigation")
+                    .takes_value(true)
+                    .help("Internal flag for testing only. This is automatically enabled by --spectre-mitigation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
             )
             .arg(
                 Arg::with_name("keygen")
