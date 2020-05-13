@@ -5,7 +5,7 @@ use crate::decls::ModuleDecls;
 use crate::error::Error;
 use crate::function::FuncInfo;
 use crate::heap::HeapSettings;
-use crate::module::ModuleInfo;
+use crate::module::{ModuleInfo, UniqueFuncIndex};
 use crate::output::{CraneliftFuncs, ObjectFile};
 use crate::runtime::Runtime;
 use crate::stack_probe;
@@ -18,7 +18,9 @@ use cranelift_codegen::{
 };
 use cranelift_faerie::{FaerieBackend, FaerieBuilder, FaerieTrapCollection};
 use cranelift_module::{Backend as ClifBackend, Module as ClifModule};
-use cranelift_wasm::{translate_module, FuncTranslator, ModuleTranslationState, WasmError};
+use cranelift_wasm::{
+    translate_module, FuncTranslator, ModuleTranslationState, TableIndex, WasmError,
+};
 use lucet_module::bindings::Bindings;
 use lucet_module::{FunctionSpec, ModuleData, ModuleFeatures, MODULE_DATA_SYM};
 use lucet_validate::Validator;
@@ -154,8 +156,18 @@ impl<'a> Compiler<'a> {
         self.decls.get_module_data(self.module_features())
     }
 
+    fn get_unique_func_index(&self, func_name: &str) -> UniqueFuncIndex {
+        for (curr_index, curr_name) in &self.decls.function_names {
+            if curr_name.symbol() == func_name {
+                return curr_index;
+            }
+        }
+        panic!(format!("Index for ${} not found", func_name));
+    }
+
     pub fn object_file(mut self) -> Result<ObjectFile, Error> {
         let mut func_translator = FuncTranslator::new();
+        let indirect_functions = &self.decls.info.table_elems[&TableIndex::from_u32(0)];
 
         for (ref func, (code, code_offset)) in self.decls.function_bodies() {
             let mut func_info = FuncInfo::new(&self.decls, self.count_instructions);
@@ -175,8 +187,31 @@ impl<'a> Compiler<'a> {
                     symbol: func.name.symbol().to_string(),
                     source,
                 })?;
+
+            let mut can_be_indirectly_called = false;
+
+            let mitigation = cranelift_spectre::settings::get_spectre_mitigation();
+            // value for can_be_indirectly_called is needed only for cet
+            if mitigation == cranelift_spectre::settings::SpectreMitigation::CET {
+                let curr_func_unique_id = self.get_unique_func_index(func.name.symbol());
+
+                'outer: for indirect_function in indirect_functions {
+                    let entries = &indirect_function.elements;
+                    for unique_func_index in entries.iter() {
+                        if curr_func_unique_id == *unique_func_index {
+                            can_be_indirectly_called = true;
+                            break 'outer;
+                        }
+                    }
+                }
+            }
+
             self.clif_module
-                .define_function(func.name.as_funcid().unwrap(), &mut clif_context)
+                .define_function(
+                    func.name.as_funcid().unwrap(),
+                    &mut clif_context,
+                    can_be_indirectly_called,
+                )
                 .map_err(|source| Error::FunctionDefinition {
                     symbol: func.name.symbol().to_string(),
                     source,

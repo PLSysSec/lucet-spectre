@@ -1000,6 +1000,7 @@ impl Instance {
         }
     }
 
+<<<<<<< HEAD
     pub fn set_current_instance(&mut self)
     {
         // there should never be another instance running on this thread when we enter this function

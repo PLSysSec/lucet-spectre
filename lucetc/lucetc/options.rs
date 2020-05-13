@@ -126,20 +126,44 @@ pub struct Options {
     pub target: Triple,
 }
 
-arg_enum!{
+arg_enum! {
     #[derive(PartialEq, Debug, Clone)]
-    pub enum TBlockProtection
-    {
-        NONE, PADDING, CET
+    pub enum SpectreMitigation {
+        NONE,
+        LOADLFENCE,
+        STRAWMAN,
+        SFI,
+        CET,
     }
 }
 
-impl Into<cranelift_spectre::settings::TBlockProtection> for TBlockProtection {
-    fn into(self) -> cranelift_spectre::settings::TBlockProtection {
+arg_enum! {
+    #[derive(PartialEq, Debug, Clone)]
+    pub enum SpectrePHTMitigation {
+        NONE,
+        BLADE,
+    }
+}
+
+impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation {
+    fn into(self) -> cranelift_spectre::settings::SpectreMitigation {
         match self {
-            TBlockProtection::NONE => cranelift_spectre::settings::TBlockProtection::NONE,
-            TBlockProtection::PADDING => cranelift_spectre::settings::TBlockProtection::PADDING,
-            TBlockProtection::CET => cranelift_spectre::settings::TBlockProtection::CET,
+            SpectreMitigation::NONE => cranelift_spectre::settings::SpectreMitigation::NONE,
+            SpectreMitigation::LOADLFENCE => {
+                cranelift_spectre::settings::SpectreMitigation::LOADLFENCE
+            }
+            SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
+            SpectreMitigation::SFI => cranelift_spectre::settings::SpectreMitigation::SFI,
+            SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
+        }
+    }
+}
+
+impl Into<cranelift_spectre::settings::SpectrePHTMitigation> for SpectrePHTMitigation {
+    fn into(self) -> cranelift_spectre::settings::SpectrePHTMitigation {
+        match self {
+            SpectrePHTMitigation::NONE => cranelift_spectre::settings::SpectrePHTMitigation::NONE,
+            SpectrePHTMitigation::BLADE => cranelift_spectre::settings::SpectrePHTMitigation::BLADE,
         }
     }
 }
@@ -209,72 +233,25 @@ impl Options {
             Some(_) => panic!("unknown value for opt-level"),
         };
 
-        let spectre_baseline_loadfence_enable = m.is_present("spectre_baseline_loadfence_enable");
-        cranelift_spectre::settings::use_spectre_baseline_settings(spectre_baseline_loadfence_enable);
+        let spectre_mitigation = m
+            .value_of("spectre_mitigation")
+            .map(|m| m.parse::<SpectreMitigation>().unwrap());
 
-        let spectre_mitigations_enable = m.is_present("spectre_mitigations_enable");
-        if spectre_mitigations_enable {
-            let spectre_tblock_size = m
-                .value_of("spectre_tblock_size")
-                .map(|m| m.parse::<u32>().unwrap());
-            let spectre_tblocks_in_ablock = m
-                .value_of("spectre_tblocks_in_ablock")
-                .map(|m| m.parse::<u32>().unwrap());
-            let spectre_function_align_enable = m
-                .value_of("spectre_function_align_enable")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_tblock_protection = m
-                .value_of("spectre_tblock_protection")
-                .map(|m| m.parse::<TBlockProtection>().unwrap());
-            let spectre_direct_branch_align_enable = m
-                .value_of("spectre_direct_branch_align_enable")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_direct_branch_align = m
-                .value_of("spectre_direct_branch_align")
-                .map(|m| m.parse::<u32>().unwrap());
-            let spectre_indirect_branch_align_enable = m
-                .value_of("spectre_indirect_branch_align_enable")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_indirect_branch_align = m
-                .value_of("spectre_indirect_branch_align")
-                .map(|m| m.parse::<u32>().unwrap());
-            let spectre_indirect_call_via_jump = m
-                .value_of("spectre_indirect_call_via_jump")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_mask_after_unspill = m
-                .value_of("spectre_mask_after_unspill")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_align_basic_blocks = m
-                .value_of("spectre_align_basic_blocks")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_mask_indirects_cf = m
-                .value_of("spectre_mask_indirects_cf")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_nacl_style_calls = m
-                .value_of("spectre_nacl_style_calls")
-                .map(|m| m.parse::<bool>().unwrap());
-            let spectre_callbacks_workaround = m
-                .value_of("spectre_callbacks_workaround")
-                .map(|m| m.parse::<bool>().unwrap());
+        let mut spectre_pht_mitigation = m
+            .value_of("spectre_pht_mitigation")
+            .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
 
-            cranelift_spectre::settings::use_spectre_mitigation_settings(
-                spectre_mitigations_enable,
-                spectre_tblock_size,
-                spectre_tblocks_in_ablock,
-                spectre_function_align_enable,
-                spectre_tblock_protection.map(|m| m.into()),
-                spectre_direct_branch_align_enable,
-                spectre_direct_branch_align,
-                spectre_indirect_branch_align_enable,
-                spectre_indirect_branch_align,
-                spectre_indirect_call_via_jump,
-                spectre_mask_after_unspill,
-                spectre_align_basic_blocks,
-                spectre_mask_indirects_cf,
-                spectre_nacl_style_calls,
-                spectre_callbacks_workaround,
-            );
+        if spectre_pht_mitigation.is_none()
+            && (spectre_mitigation == SpectreMitigation::SFI.into()
+                || spectre_mitigation == SpectreMitigation::CET.into())
+        {
+            spectre_pht_mitigation = Some(SpectrePHTMitigation::BLADE);
         }
+
+        cranelift_spectre::settings::use_spectre_mitigation_settings(
+            spectre_mitigation.clone().map(|m| m.into()),
+            spectre_pht_mitigation.clone().map(|m| m.into()),
+        );
 
         let target = match m.value_of("target") {
             None => Triple::host(),
@@ -299,8 +276,8 @@ impl Options {
         let sk_path = m.value_of("sk_path").map(PathBuf::from);
         let pk_path = m.value_of("pk_path").map(PathBuf::from);
         let count_instructions = m.is_present("count_instructions");
-        let pinned_heap = m.is_present("pinned_heap");
-        let pinned_control_flow = m.is_present("pinned_control_flow");
+        let pinned_heap =
+            spectre_mitigation == Some(SpectreMitigation::SFI) || m.is_present("pinned_heap");
 
         let error_style = match m.value_of("error_style") {
             None => ErrorStyle::default(),
@@ -509,100 +486,16 @@ SSE3 but not AVX:
                     .help("optimization level (default: 'speed_and_size'). 0 is alias to 'none', 1 to 'speed', 2 to 'speed_and_size'"),
             )
             .arg(
-                Arg::with_name("spectre_baseline_loadfence_enable")
-                    .long("--spectre-baseline-loadfence-enable")
-                    .takes_value(false)
-                    .help("Enable baseline security mitigation of using a lfence before every load to protect against spectre vulnerabilities. This is only a baseline comparison for --spectre-mitigations-enable. Not enabled by default --- for benchmarking only.")
-            )
-            .arg(
-                Arg::with_name("spectre_mitigations_enable")
-                    .long("--spectre-mitigations-enable")
-                    .takes_value(false)
-                    .help("Enable security mitigations to protect against spectre vulnerabilities")
-            )
-            .arg(
-                Arg::with_name("spectre_tblock_size")
-                    .long("--spectre-tblock-size")
+                Arg::with_name("spectre_mitigation")
+                    .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("Value used as the bundle size for instructions---similar to native client."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet."),
             )
             .arg(
-                Arg::with_name("spectre_tblocks_in_ablock")
-                    .long("--spectre-tblocks-in-ablock")
+                Arg::with_name("spectre_pht_mitigation")
+                    .long("--spectre-pht-mitigation")
                     .takes_value(true)
-                    .help("Number of transaction blocks in alignment block. Alignment blocks help align instructions."),
-            )
-            .arg(
-                Arg::with_name("spectre_function_align_enable")
-                    .long("--spectre-function-align-enable")
-                    .takes_value(true)
-                    .help("Whether to align the each function."),
-            )
-            .arg(
-                Arg::with_name("spectre_tblock_protection")
-                    .long("--spectre-tblock-protection")
-                    .takes_value(true)
-                    .help("What scheme to use to protect transaction blocks."),
-            )
-            .arg(
-                Arg::with_name("spectre_direct_branch_align_enable")
-                    .long("--spectre-direct-branch-align-enable")
-                    .takes_value(true)
-                    .help("Whether to align the direct branch instructions."),
-            )
-            .arg(
-                Arg::with_name("spectre_direct_branch_align")
-                    .long("--spectre-direct-branch-align")
-                    .takes_value(true)
-                    .help("What offset to align the direct branch instructions. direct_branch_inst_Offset mod tblock_size == this_value."),
-            )
-            .arg(
-                Arg::with_name("spectre_indirect_branch_align_enable")
-                .long("--spectre-indirect-branch-align-enable")
-                .takes_value(true)
-                .help("Whether to align the indirect branch instructions.")
-            )
-            .arg(
-                Arg::with_name("spectre_indirect_branch_align")
-                .long("--spectre-indirect-branch-align")
-                .takes_value(true)
-                .help("What offset to align the indirect branch instructions. indirect_branch_inst_Offset mod tblock_size == this_value."),
-            )
-            .arg(
-                Arg::with_name("spectre_indirect_call_via_jump")
-                .long("--spectre-indirect-call-via-jump")
-                .takes_value(true)
-                .help("Whether to replace all indirect calls with jump instructions. Not enabled by default --- for benchmarking only.")
-            )
-            .arg(
-                Arg::with_name("spectre_mask_after_unspill")
-                .long("--spectre-mask-after-unspill")
-                .takes_value(true)
-                .help("Whether to mask all registers after unspilling.")
-            )
-            .arg(
-                Arg::with_name("spectre_align_basic_blocks")
-                .long("--spectre-align-basic-blocks")
-                .takes_value(true)
-                .help("Whether to align all basic blocks.")
-            )
-            .arg(
-                Arg::with_name("spectre_mask_indirects_cf")
-                .long("--spectre-mask-call-indirects")
-                .takes_value(true)
-                .help("Whether to mask all indirect control flow.")
-            )
-            .arg(
-                Arg::with_name("spectre_nacl_style_calls")
-                .long("--spectre-nacl-style-calls")
-                .takes_value(true)
-                .help("Whether to use nacl style function calls at the bottome of a transaction block. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
-            )
-            .arg(
-                Arg::with_name("spectre_callbacks_workaround")
-                .long("--spectre-callbacks-workaround")
-                .takes_value(true)
-                .help("Workaround to disable code segment masking to support callbacks. This option is not secure for spectre mitigations. Not enabled by default --- for benchmarking only.")
+                    .help("Internal flag for testing only. This is automatically enabled by --spectre-mitigation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
             )
             .arg(
                 Arg::with_name("keygen")

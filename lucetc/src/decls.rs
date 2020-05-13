@@ -66,7 +66,7 @@ pub struct TableDecl<'a> {
 
 pub struct ModuleDecls<'a> {
     pub info: ModuleInfo<'a>,
-    function_names: PrimaryMap<UniqueFuncIndex, Name>,
+    pub function_names: PrimaryMap<UniqueFuncIndex, Name>,
     imports: Vec<ImportFunction<'a>>,
     exports: Vec<ExportFunction<'a>>,
     tables_list_name: Name,

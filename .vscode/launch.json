@@ -7,143 +7,17 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "lucetc",
+            "name": "png_strawman",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/test.wasm",
-                "-o", "../out/sfi-spectre-test/test.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_baseline_lfence",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/test.wasm",
-                "-o", "../out/sfi-spectre-test/test_spectre_baseline.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_spectre",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--spectre-mitigations-enable",
-                "--pinned-heap-reg",
-                "--pinned-control-flow",
-                "--spectre-callbacks-workaround",
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/basic_test/test.wasm",
-                "-o", "../out/sfi-spectre-test/basic_test/test.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}",
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_png",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_spectre_png",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--spectre-mitigations-enable",
-                "--pinned-heap-reg",
-                "--pinned-control-flow",
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_spectre_cet_png",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--spectre-mitigations-enable",
-                "--pinned-heap-reg",
-                "--pinned-control-flow",
-                "--spectre-tblock-protection", "cet",
-                "--bindings", "./lucet-wasi/bindings.json",
-                "--guard-size", "4GiB",
-                "--min-reserved-size", "4GiB",
-                "--max-reserved-size", "4GiB",
-                "--emit", "obj",
-                "../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "../out/sfi-spectre-test/libpng/pngtest_spectre.o",
-            ],
-            "env": {
-                "RUST_BACKTRACE" : "1"
-            },
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "lucetc_ablockonly",
-            "program": "${workspaceFolder}/target/debug/lucetc",
-            "args": [
-                "--spectre-mitigations-enable",
-                "--spectre-tblock-protection", "none",
+                "--spectre-mitigation", "strawman",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre.o",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre_strawman.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -154,21 +28,95 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "lucet-wasi",
-            "program": "${workspaceFolder}/target/debug/lucet-wasi",
+            "name": "test_sfi",
+            "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--heap-address-space", "8GiB",
-                "--max-heap-size", "4GiB",
-                "--stack-size", "8MiB",
-                "--dir", "/:/",
-                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre.so"
-
+                "--spectre-mitigation", "sfi",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_sfi.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
             },
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
         },
-
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "png_sfi",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigation", "sfi",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre_sfi.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
+        {
+            "name": "run_test_sfi",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/lucet-wasi",
+            "args": [
+                "--heap-address-space", "8GiB",
+                 "--max-heap-size", "4GiB",
+                 "--stack-size", "8MiB",
+                 "--dir", "/:/",
+                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.so"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "RUST_BACKTRACE",
+                    "value": "1"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "test_cet",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-mitigation", "cet",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_cet.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
     ]
 }
