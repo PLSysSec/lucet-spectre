@@ -108,15 +108,10 @@ impl ObjectFile {
         traps: &mut FaerieTrapManifest,
         function_manifest: &mut Vec<(String, FunctionSpec)>,
     ) -> Result<(), Error> {
-        let func = if cranelift_spectre::settings::get_mitigations_enable() {
-            Decl::function().with_align(cranelift_spectre::padding::get_function_align())
-        } else {
-            Decl::function()
-        };
         self.artifact
             .declare_with(
                 stack_probe::STACK_PROBE_SYM,
-                func,
+                Decl::function(),
                 stack_probe::STACK_PROBE_BINARY.to_vec(),
             )
             .map_err(|source| {

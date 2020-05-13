@@ -121,7 +121,6 @@ pub struct Options {
     pub sk_path: Option<PathBuf>,
     pub count_instructions: bool,
     pub pinned_heap: bool,
-    pub pinned_control_flow: bool,
     pub error_style: ErrorStyle,
     pub target: Triple,
 }
@@ -307,7 +306,6 @@ impl Options {
             pk_path,
             count_instructions,
             pinned_heap,
-            pinned_control_flow,
             error_style,
             target,
         })
@@ -538,12 +536,6 @@ SSE3 but not AVX:
                     .long("--pinned-heap-reg")
                     .takes_value(false)
                     .help("This feature is not stable - it may be removed in the future! Pin a register to use as this module's heap base. Typically improves performance.")
-            )
-            .arg(
-                Arg::with_name("pinned_control_flow")
-                    .long("--pinned-control-flow")
-                    .takes_value(false)
-                    .help("This feature is not stable - it may be removed in the future! Pin a register to use as this module's code segment.")
             )
             .arg(
                 Arg::with_name("error_style")

@@ -145,10 +145,6 @@ pub fn run(opts: &Options) -> Result<(), Error> {
         c.pinned_heap(true);
     }
 
-    if opts.pinned_control_flow {
-        c.pinned_control_flow(true);
-    }
-
     match opts.codegen {
         CodegenOutput::Obj => c.object_file(&opts.output)?,
         CodegenOutput::SharedObj => c.shared_object_file(&opts.output)?,
