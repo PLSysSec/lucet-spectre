@@ -972,7 +972,8 @@ impl Instance {
 
         self.entrypoint = Some(func);
 
-        let mut args_with_vmctx = vec![Val::from(self.alloc.slot().heap)];
+        let heap = self.alloc.slot().heap;
+        let mut args_with_vmctx = vec![Val::from(heap)];
         args_with_vmctx.extend_from_slice(args);
 
         let self_ptr = self as *mut _;
@@ -983,6 +984,7 @@ impl Instance {
             self_ptr,
             func.ptr.as_usize(),
             &args_with_vmctx,
+            heap,
         )?;
 
         self.install_activator();
