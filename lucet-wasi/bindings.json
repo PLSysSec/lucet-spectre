@@ -1,5 +1,5 @@
 {
-    "wasi_snapshot_preview1": {
+    "wasi_unstable": {
         "args_get": "hostcall_wasi_snapshot_preview1_args_get",
         "args_sizes_get": "hostcall_wasi_snapshot_preview1_args_sizes_get",
         "clock_res_get": "hostcall_wasi_snapshot_preview1_clock_res_get",
