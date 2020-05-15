@@ -355,7 +355,12 @@ impl<'a> Compiler<'a> {
             let mut traps = TrapSites::new();
             let compiled = self
                 .clif_module
-                .define_function(func_id, &mut clif_context, &mut traps, can_be_indirectly_called)
+                .define_function(
+                    func_id,
+                    &mut clif_context,
+                    &mut traps,
+                    can_be_indirectly_called,
+                )
                 .map_err(|source| Error::FunctionDefinition {
                     symbol: func.name.symbol().to_string(),
                     source,

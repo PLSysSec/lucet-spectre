@@ -404,7 +404,7 @@ where
 fn ldflags_default(target: &Triple) -> String {
     use target_lexicon::OperatingSystem;
 
-    match target.operating_system {
+    let mut ret = match target.operating_system {
         OperatingSystem::Linux => "-shared",
         OperatingSystem::Darwin | OperatingSystem::MacOSX { .. } => {
             "-dylib -dead_strip -export_dynamic -undefined dynamic_lookup"
@@ -417,5 +417,13 @@ flags for generating shared libraries.",
             target
         ),
     }
-    .into()
+    .into();
+
+    if cranelift_spectre::settings::get_spectre_mitigation()
+        == cranelift_spectre::settings::SpectreMitigation::CET
+    {
+        ret = ret + " -z ibt -z shstk";
+    }
+
+    return ret;
 }
