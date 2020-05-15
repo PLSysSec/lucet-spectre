@@ -1,6 +1,6 @@
 [submodule "wasmtime"]
 	path = wasmtime
-	url = https://github.com/PLSysSec/wasmtime-spectre
+	url = git@github.com:PLSysSec/wasmtime-spectre.git
 [submodule "lucet-spectest/spec"]
 	path = lucet-spectest/spec
 	url = https://github.com/webassembly/spec
