@@ -24,9 +24,9 @@ use cranelift_module::{
     Linkage as ClifLinkage, Module as ClifModule,
 };
 use cranelift_object::{ObjectBackend, ObjectBuilder};
-use cranelift_wasm::{translate_module, FuncTranslator, ModuleTranslationState, WasmError};
 use cranelift_wasm::{
     translate_module, FuncTranslator, ModuleTranslationState, TableIndex, WasmError,
+};
 use lucet_module::bindings::Bindings;
 use lucet_module::{
     ModuleData, ModuleFeatures, SerializedModule, VersionInfo, LUCET_MODULE_SYM, MODULE_DATA_SYM,
@@ -355,7 +355,7 @@ impl<'a> Compiler<'a> {
             let mut traps = TrapSites::new();
             let compiled = self
                 .clif_module
-                .define_function(func_id, &mut clif_context, &mut traps)
+                .define_function(func_id, &mut clif_context, &mut traps, can_be_indirectly_called)
                 .map_err(|source| Error::FunctionDefinition {
                     symbol: func.name.symbol().to_string(),
                     source,

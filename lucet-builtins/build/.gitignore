@@ -1,0 +1,7 @@
+/libbuiltins.so
+/memcpy.o
+/memmove.o
+/strcasecmp.o
+/strchr.o
+/strcmp.o
+/strlen.o

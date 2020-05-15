@@ -287,9 +287,11 @@ dependencies = [
  "cranelift-codegen-meta",
  "cranelift-codegen-shared",
  "cranelift-entity",
+ "cranelift-spectre",
  "gimli",
  "log",
  "regalloc",
+ "rs-graph",
  "smallvec",
  "target-lexicon",
  "thiserror",
@@ -352,12 +354,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cranelift-spectre"
+version = "0.1.0"
+
+[[package]]
 name = "cranelift-wasm"
 version = "0.62.0"
 dependencies = [
  "cranelift-codegen",
  "cranelift-entity",
  "cranelift-frontend",
+ "cranelift-spectre",
  "log",
  "thiserror",
  "wasmparser",
@@ -1101,6 +1108,7 @@ dependencies = [
  "cranelift-module",
  "cranelift-native",
  "cranelift-object",
+ "cranelift-spectre",
  "cranelift-wasm",
  "env_logger",
  "human-size",
@@ -1679,6 +1687,17 @@ checksum = "99371657d3c8e4d816fb6221db98fa408242b0b53bac08f8676a41f8554fe99f"
 dependencies = [
  "libc",
  "winapi 0.3.8",
+]
+
+[[package]]
+name = "rs-graph"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1300d7f118407ace997442a26aad7698bd093b0bcb24da2f73e017ea0e571612"
+dependencies = [
+ "either",
+ "num-iter",
+ "num-traits",
 ]
 
 [[package]]

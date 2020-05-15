@@ -1211,16 +1211,6 @@ impl Instance {
             *current_instance.borrow_mut() = None;
         });
     }
-
-    fn run_start(&mut self) -> Result<(), Error> {
-        if let Some(start) = self.module.get_start_func()? {
-            let res = self.run_func(start, &[])?;
-            if res.is_yielded() {
-                return Err(Error::StartYielded);
-            }
-        }
-        Ok(())
-    }
 }
 
 /// Information about a runtime fault.
