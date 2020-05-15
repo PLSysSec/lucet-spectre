@@ -4,5 +4,6 @@ fn main() {
     // <https://github.com/rust-lang/cargo/issues/1581>
     cc::Build::new()
         .file("src/guest_fault/traps.S")
+        .flag_if_supported("-fcf-protection=full")
         .compile("guest_fault_traps");
 }

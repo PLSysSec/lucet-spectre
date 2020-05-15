@@ -5,9 +5,11 @@ use std::path::Path;
 fn main() {
     cc::Build::new()
         .file("src/context/context_asm.S")
+        .flag_if_supported("-fcf-protection=full")
         .compile("context_context_asm");
     cc::Build::new()
         .file("src/instance/siginfo_ext.c")
+        .flag_if_supported("-fcf-protection=full")
         .compile("instance_siginfo_ext");
 
     // TODO: this should only be built for tests, but Cargo doesn't
@@ -15,6 +17,7 @@ fn main() {
     // <https://github.com/rust-lang/cargo/issues/1581>
     cc::Build::new()
         .file("src/context/tests/c_child.c")
+        .flag_if_supported("-fcf-protection=full")
         .compile("context_tests_c_child");
 
     let commit_file_path = Path::new(&env::var("OUT_DIR").unwrap()).join("commit_hash");
