@@ -338,14 +338,19 @@ impl<'a> Compiler<'a> {
             let mitigation = cranelift_spectre::settings::get_spectre_mitigation();
             // value for can_be_indirectly_called is needed only for cet
             if mitigation == cranelift_spectre::settings::SpectreMitigation::CET {
-                let curr_func_unique_id = self.get_unique_func_index(func.name.symbol());
+                let func_name = func.name.symbol();
+                if func_name == "guest_func__start" {
+                    can_be_indirectly_called = true;
+                } else {
+                    let curr_func_unique_id = self.get_unique_func_index(func_name);
 
-                'outer: for indirect_function in indirect_functions {
-                    let entries = &indirect_function.elements;
-                    for unique_func_index in entries.iter() {
-                        if curr_func_unique_id == *unique_func_index {
-                            can_be_indirectly_called = true;
-                            break 'outer;
+                    'outer: for indirect_function in indirect_functions {
+                        let entries = &indirect_function.elements;
+                        for unique_func_index in entries.iter() {
+                            if curr_func_unique_id == *unique_func_index {
+                                can_be_indirectly_called = true;
+                                break 'outer;
+                            }
                         }
                     }
                 }
