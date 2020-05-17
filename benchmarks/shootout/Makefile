@@ -20,11 +20,20 @@ SHOOTOUT_LUCET_OBJS:=
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -I$(SIGHTGLASS)/include
 
+LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence
+STRAWMAN_FLAGS:=--spectre-mitigation=strawman
+SFI_FLAGS:=--spectre-mitigation=sfi
+CET_FLAGS:=--spectre-mitigation=cet
+BLADE_FLAGS:=--spectre-pht-mitigation=blade
+
+
 SHOOTOUT_NATIVE_CFLAGS:=-march=native -fPIC \
 	-DIMPL_REFERENCE -DUSE_LEND \
 	-Dmalloc=lend_malloc -Dcalloc=lend_calloc -Dfree=lend_free
 
 BINARYEN_VERSION=86
+
+TIMESTAMP:=$(shell date --iso=seconds)
 
 ifdef CI
 	SIGHTGLASS_ARGS:=--quick
@@ -37,13 +46,31 @@ bench: run
 
 .PHONY: run
 run: build
-	$(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	taskset -c $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py /tmp/results-latest.csv
+	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(shell date --iso=seconds)  
 
 .PHONY: build
 build: $(LUCETC)
 build: build/native/implementation.so
 build: build/lucet/implementation.so
 build: build/lucet/module.so
+
+build: build/loadlfence/implementation.so
+build: build/loadlfence/module.so
+
+build: build/strawman/implementation.so
+build: build/strawman/module.so
+
+build: build/sfi/implementation.so
+build: build/sfi/module.so
+
+build: build/cet/implementation.so
+build: build/cet/module.so
+
+build: build/blade/implementation.so
+build: build/blade/module.so
+
 build: $(LUCET_ROOT)/target/release/sightglass
 
 # With the xenial gcc (5.4.0) this pins the CPU for minutes if above -O1, so its getting downgraded to -O1
@@ -75,14 +102,118 @@ build/lucet/module.so: build/lucet/module.wasm
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		-o $@
+		$< -o $@
+
+build/loadlfence/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/loadlfence/module.wasm: build/lucet/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/loadlfence/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(LOADLFENCE_FLAGS) \
+		$< -o $@
+
+
+build/loadlfence/implementation.so: build/lucet/implementation.so
+	@mkdir -p $(@D)
+	cp build/lucet/implementation.so $@
+
+build/strawman/implementation.so: build/lucet/implementation.so
+	@mkdir -p $(@D)
+	cp build/lucet/implementation.so $@
+
+build/sfi/implementation.so: build/lucet/implementation.so
+	@mkdir -p $(@D)
+	cp build/lucet/implementation.so $@
+
+build/cet/implementation.so: build/lucet/implementation.so
+	@mkdir -p $(@D)
+	cp build/lucet/implementation.so $@
+
+build/blade/implementation.so: build/lucet/implementation.so
+	@mkdir -p $(@D)
+	cp build/lucet/implementation.so $@
+
+
+
+
+build/strawman/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/strawman/module.wasm: build/lucet/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/strawman/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(STRAWMAN_FLAGS) \
+		$< -o $@
+
+
+build/sfi/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/sfi/module.wasm: build/lucet/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/sfi/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(SFI_FLAGS) \
+		$< -o $@
+
+
+
+build/cet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/cet/module.wasm: build/lucet/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/cet/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CET_FLAGS) \
+		$< -o $@
+
+
+build/blade/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/blade/module.wasm: build/lucet/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/blade/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(BLADE_FLAGS) \
+		$< -o $@
+
 
 build/lucet/module.clif: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		-o $@
+		$< -o $@
 
 build/lucet/%.o: %.c
 	@mkdir -p $(@D)
