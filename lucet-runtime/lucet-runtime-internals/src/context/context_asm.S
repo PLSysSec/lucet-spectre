@@ -39,6 +39,7 @@
 .align 16
 lucet_context_bootstrap:
 _lucet_context_bootstrap:
+    endbr64
     // Move each of the argument values into the corresponding call
     // argument register.
     pop %r9
@@ -108,6 +109,7 @@ no_backstop_callback:
 .align 16
 lucet_context_swap:
 _lucet_context_swap:
+    endbr64
     // store everything in offsets from rdi (1st arg)
     mov %rbx, (0*8)(%rdi)
     mov %rsp, (1*8)(%rdi)
