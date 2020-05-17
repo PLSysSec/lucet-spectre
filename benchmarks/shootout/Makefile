@@ -46,7 +46,7 @@ bench: run
 
 .PHONY: run
 run: build
-	taskset -c $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
 	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py /tmp/results-latest.csv
 	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(shell date --iso=seconds)  
 
