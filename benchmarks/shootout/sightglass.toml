@@ -1,11 +1,12 @@
 # Test suites to run
 test_suites = [
-  { name = "Reference", library_path = "./build/native/implementation.so" },
-  { name = "lucet", library_path = "./build/lucet/implementation.so" },
+  { name = "Reference", library_path = "./build/lucet/implementation.so" },
   { name = "loadlfence", library_path = "./build/loadlfence/implementation.so" },
   { name = "strawman", library_path = "./build/strawman/implementation.so" },
   { name = "sfi", library_path = "./build/sfi/implementation.so" },
   { name = "cet", library_path = "./build/cet/implementation.so" },
+  { name = "sfi_noblade", library_path = "./build/sfi_noblade/implementation.so" },
+  { name = "cet_noblade", library_path = "./build/cet_noblade/implementation.so" },
   { name = "blade", library_path = "./build/blade/implementation.so" },
 ]
 

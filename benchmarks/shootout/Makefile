@@ -18,12 +18,14 @@ SHOOTOUT_NATIVE_OBJS:=
 SHOOTOUT_LUCET_OBJS:=
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
-COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -I$(SIGHTGLASS)/include
+COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman
 SFI_FLAGS:=--spectre-mitigation=sfi
 CET_FLAGS:=--spectre-mitigation=cet
+SFI_NOBLADE_FLAGS:=--spectre-mitigation=sfi --spectre-pht-mitigation=none
+CET_NOBLADE_FLAGS:=--spectre-mitigation=cet --spectre-pht-mitigation=none
 BLADE_FLAGS:=--spectre-pht-mitigation=blade
 
 
@@ -47,15 +49,16 @@ bench: run
 .PHONY: run
 run: build
 	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-	-rm -r $(LUCET_ROOT)/benchmarks/current_sightglass
-	mkdir -p $(LUCET_ROOT)/benchmarks/current_sightglass
-	mv /tmp/results-latest.csv $(LUCET_ROOT)/benchmarks/current_sightglass/results-latest.csv
-	python3 $(LUCET_ROOT)/sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/benchmarks/current_sightglass/results-latest.csv
-	mv $(LUCET_ROOT)/benchmarks/current_sightglass $(LUCET_ROOT)/benchmarks/sightglass_$(shell date --iso=seconds)
+	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
+	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
+	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
 
 .PHONY: build
 build: $(LUCETC)
 build: build/native/implementation.so
+
 build: build/lucet/implementation.so
 build: build/lucet/module.so
 
@@ -70,6 +73,12 @@ build: build/sfi/module.so
 
 build: build/cet/implementation.so
 build: build/cet/module.so
+
+build: build/sfi_noblade/implementation.so
+build: build/sfi_noblade/module.so
+
+build: build/cet_noblade/implementation.so
+build: build/cet_noblade/module.so
 
 build: build/blade/implementation.so
 build: build/blade/module.so
@@ -107,110 +116,6 @@ build/lucet/module.so: build/lucet/module.wasm
 		--bindings=$(LUCET_WASI)/bindings.json \
 		$< -o $@
 
-build/loadlfence/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/loadlfence/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/loadlfence/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(LOADLFENCE_FLAGS) \
-		$< -o $@
-
-
-build/loadlfence/implementation.so: build/lucet/implementation.so
-	@mkdir -p $(@D)
-	cp build/lucet/implementation.so $@
-
-build/strawman/implementation.so: build/lucet/implementation.so
-	@mkdir -p $(@D)
-	cp build/lucet/implementation.so $@
-
-build/sfi/implementation.so: build/lucet/implementation.so
-	@mkdir -p $(@D)
-	cp build/lucet/implementation.so $@
-
-build/cet/implementation.so: build/lucet/implementation.so
-	@mkdir -p $(@D)
-	cp build/lucet/implementation.so $@
-
-build/blade/implementation.so: build/lucet/implementation.so
-	@mkdir -p $(@D)
-	cp build/lucet/implementation.so $@
-
-
-
-
-build/strawman/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/strawman/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/strawman/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(STRAWMAN_FLAGS) \
-		$< -o $@
-
-
-build/sfi/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/sfi/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/sfi/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(SFI_FLAGS) \
-		$< -o $@
-
-
-
-build/cet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/cet/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/cet/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CET_FLAGS) \
-		$< -o $@
-
-
-build/blade/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
-	@mkdir -p $(@D)
-	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
-
-build/blade/module.wasm: build/lucet/module.wasm.unoptimized
-	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
-
-build/blade/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(BLADE_FLAGS) \
-		$< -o $@
-
-
 build/lucet/module.clif: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
@@ -226,6 +131,62 @@ build/lucet/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/lucet/module.so) \
 		-c $^ -o $@
+build/loadlfence/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/loadlfence/module.so) \
+		-c $^ -o $@
+build/strawman/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/strawman/module.so) \
+		-c $^ -o $@
+build/sfi/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sfi/module.so) \
+		-c $^ -o $@
+build/cet/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/cet/module.so) \
+		-c $^ -o $@
+build/sfi_noblade/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/sfi_noblade/module.so) \
+		-c $^ -o $@
+build/cet_noblade/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/cet_noblade/module.so) \
+		-c $^ -o $@
+build/blade/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/blade/module.so) \
+		-c $^ -o $@
 
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
@@ -237,6 +198,139 @@ build/lucet/implementation.so: build/lucet/hostcalls.o
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/loadlfence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/loadlfence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/loadlfence/implementation.so: build/loadlfence/wrapper.o
+build/loadlfence/implementation.so: build/loadlfence/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/loadlfence/wrapper.o build/loadlfence/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/strawman/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/strawman/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/strawman/implementation.so: build/strawman/wrapper.o
+build/strawman/implementation.so: build/strawman/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/strawman/wrapper.o build/strawman/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/sfi/implementation.so: build/sfi/wrapper.o
+build/sfi/implementation.so: build/sfi/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/sfi/wrapper.o build/sfi/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/cet/implementation.so: build/cet/wrapper.o
+build/cet/implementation.so: build/cet/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/cet/wrapper.o build/cet/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/sfi_noblade/implementation.so: build/sfi_noblade/wrapper.o
+build/sfi_noblade/implementation.so: build/sfi_noblade/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/sfi_noblade/wrapper.o build/sfi_noblade/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/cet_noblade/implementation.so: build/cet_noblade/wrapper.o
+build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/cet_noblade/wrapper.o build/cet_noblade/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
+build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/blade/implementation.so: build/blade/wrapper.o
+build/blade/implementation.so: build/blade/hostcalls.o
+	@mkdir -p $(@D)
+	$(CC) -rdynamic -shared \
+		build/blade/wrapper.o build/blade/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+
+build/loadlfence/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(LOADLFENCE_FLAGS) \
+		$< -o $@
+
+build/strawman/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(STRAWMAN_FLAGS) \
+		$< -o $@
+
+build/sfi/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(SFI_FLAGS) \
+		$< -o $@
+
+build/cet/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CET_FLAGS) \
+		$< -o $@
+
+build/sfi_noblade/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(SFI_NOBLADE_FLAGS) \
+		$< -o $@
+
+build/cet_noblade/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CET_NOBLADE_FLAGS) \
+		$< -o $@
+
+build/blade/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(BLADE_FLAGS) \
+		$< -o $@
 
 $(LUCET_ROOT)/target/release/sightglass:
 	cargo build --release -p sightglass
