@@ -1,3 +1,4 @@
+#![feature(asm)]
 mod compile;
 mod context;
 mod modules;

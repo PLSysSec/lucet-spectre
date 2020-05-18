@@ -103,8 +103,14 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
             #[inline(always)]
             #hostcall
 
+            //lfence before hostcall
+            asm!("lfence"
+                :
+                :
+                : "volatile"
+            );
             let mut vmctx = #vmctx_mod::Vmctx::from_raw(vmctx_raw);
-            #vmctx_mod::VmctxInternal::instance_mut(&mut vmctx).uninterruptable(|| {
+            let ret = #vmctx_mod::VmctxInternal::instance_mut(&mut vmctx).uninterruptable(|| {
                 let res = std::panic::catch_unwind(move || {
                     #hostcall_ident(&mut #vmctx_mod::Vmctx::from_raw(vmctx_raw), #(#impl_args),*)
                 });
@@ -119,7 +125,14 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
                         }
                     }
                 }
-            })
+            });
+            //lfence after hostcall
+            asm!("lfence"
+                :
+                :
+                : "volatile"
+            );
+            ret
         }
     };
     raw_hostcall.into()
