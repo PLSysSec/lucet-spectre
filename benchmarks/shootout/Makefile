@@ -47,8 +47,11 @@ bench: run
 .PHONY: run
 run: build
 	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-	python3 ../../../sfi-spectre-testing/scripts/graph_sightglass.py /tmp/results-latest.csv
-	mv /tmp/results-latest.csv ../../../sfi-spectre-testing/benchmarks/sightglass_$(shell date --iso=seconds)  
+	-rm -r $(LUCET_ROOT)/benchmarks/current_sightglass
+	mkdir -p $(LUCET_ROOT)/benchmarks/current_sightglass
+	mv /tmp/results-latest.csv $(LUCET_ROOT)/benchmarks/current_sightglass/results-latest.csv
+	python3 $(LUCET_ROOT)/sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/benchmarks/current_sightglass/results-latest.csv
+	mv $(LUCET_ROOT)/benchmarks/current_sightglass $(LUCET_ROOT)/benchmarks/sightglass_$(shell date --iso=seconds)
 
 .PHONY: build
 build: $(LUCETC)
@@ -233,7 +236,7 @@ build/lucet/implementation.so: build/lucet/hostcalls.o
 		build/lucet/wrapper.o build/lucet/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -o $@
+		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
 
 $(LUCET_ROOT)/target/release/sightglass:
 	cargo build --release -p sightglass
