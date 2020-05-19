@@ -1,6 +1,5 @@
 # Test suites to run
 test_suites = [
-  { name = "0.Reference", library_path = "./build/lucet/implementation.so" },
   { name = "7.cet", library_path = "./build/cet/implementation.so" },
   { name = "8.cet_noblade", library_path = "./build/cet_noblade/implementation.so" },
 ]
