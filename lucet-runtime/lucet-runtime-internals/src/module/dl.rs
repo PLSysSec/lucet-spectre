@@ -126,18 +126,19 @@ impl DlModule {
 
         let module_version = serialized_module.version.clone();
 
-        let runtime_version =
-            VersionInfo::current(include_str!(concat!(env!("OUT_DIR"), "/commit_hash")).as_bytes());
+        // let runtime_version =
+        //     VersionInfo::current(include_str!(concat!(env!("OUT_DIR"), "/commit_hash")).as_bytes());
 
         if !module_version.valid() {
             return Err(lucet_incorrect_module!("reserved bit is not set. This module is likely too old for this lucet-runtime to load."));
-        } else if !runtime_version.compatible_with(&module_version) {
-            return Err(lucet_incorrect_module!(
-                "version mismatch. module has version {}, while this runtime is version {}",
-                module_version,
-                runtime_version,
-            ));
         }
+        // else if !runtime_version.compatible_with(&module_version) {
+        //     return Err(lucet_incorrect_module!(
+        //         "version mismatch. module has version {}, while this runtime is version {}",
+        //         module_version,
+        //         runtime_version,
+        //     ));
+        // }
 
         // Deserialize the slice into ModuleData, which will hold refs into the loaded
         // shared object file in `module_data_slice`. Both of these get a 'static lifetime because
