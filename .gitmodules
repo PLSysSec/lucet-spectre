@@ -6,7 +6,7 @@
 	url = https://github.com/webassembly/spec
 [submodule "sightglass"]
 	path = sightglass
-	url = https://github.com/PLSysSec/sightglass
+	url = git@github.com:PLSysSec/sightglass.git
 [submodule "wasi"]
 	path = wasi
 	url = https://github.com/webassembly/wasi
