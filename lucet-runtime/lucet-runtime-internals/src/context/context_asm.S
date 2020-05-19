@@ -184,6 +184,7 @@ _lucet_context_swap:
 .align 16
 lucet_context_swap_out:
 _lucet_context_swap_out:
+    endbr64
     // store everything in offsets from rdi (1st arg)
     mov %rbx, (0*8)(%rdi)
     mov %rsp, (1*8)(%rdi)
