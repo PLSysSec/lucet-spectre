@@ -19,14 +19,17 @@ SHOOTOUT_LUCET_OBJS:=
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
+	CET_CFLAGS:=-fcf-protection=full
+	CET_LINKERFLAGS:=-Wl,-z,ibt -Wl,-z,shstk
 	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target-cet
 else
+	CET_CFLAGS:=
+	CET_LINKERFLAGS:=
 	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target
 endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
-CET_CFLAGS:=-fcf-protection=full
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman
@@ -257,7 +260,7 @@ build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/cet/implementation.so: build/cet/wrapper.o
 build/cet/implementation.so: build/cet/hostcalls.o
 	@mkdir -p $(@D)
-	$(CC) -rdynamic -shared $(CET_CFLAGS) \
+	$(CC) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
 		build/cet/wrapper.o build/cet/hostcalls.o \
 		-L $(LUCET_SIGHTGLASS_TARGET)/release \
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
@@ -277,7 +280,7 @@ build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unifi
 build/cet_noblade/implementation.so: build/cet_noblade/wrapper.o
 build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
 	@mkdir -p $(@D)
-	$(CC) -rdynamic -shared $(CET_CFLAGS) \
+	$(CC) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
 		build/cet_noblade/wrapper.o build/cet_noblade/hostcalls.o \
 		-L $(LUCET_SIGHTGLASS_TARGET)/release \
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
