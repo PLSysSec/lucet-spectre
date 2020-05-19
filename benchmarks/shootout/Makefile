@@ -73,7 +73,7 @@ run:
 	$(LUCET_ROOT)/target/release/sightglass -c blade_sfi.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c cet.toml $(SIGHTGLASS_ARGS)
+	$(CET_SIGHTGLASS) -c cet.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
