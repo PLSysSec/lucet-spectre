@@ -19,9 +19,9 @@ SHOOTOUT_LUCET_OBJS:=
 
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
-	CET_SIGHTGLASS:=$(LUCET_ROOT)/target-cet/release/sightglass
+	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target-cet
 else
-	CET_SIGHTGLASS:=$(LUCET_ROOT)/target/release/sightglass
+	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target
 endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
@@ -73,7 +73,7 @@ run:
 	$(LUCET_ROOT)/target/release/sightglass -c blade_sfi.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv
 
-	$(CET_SIGHTGLASS) -c cet.toml $(SIGHTGLASS_ARGS)
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
@@ -259,8 +259,8 @@ build/cet/implementation.so: build/cet/hostcalls.o
 	@mkdir -p $(@D)
 	$(CC) -rdynamic -shared $(CET_CFLAGS) \
 		build/cet/wrapper.o build/cet/hostcalls.o \
-		-L $(LUCET_ROOT)/target/release \
-		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-L $(LUCET_SIGHTGLASS_TARGET)/release \
+		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
 build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
@@ -279,8 +279,8 @@ build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
 	@mkdir -p $(@D)
 	$(CC) -rdynamic -shared $(CET_CFLAGS) \
 		build/cet_noblade/wrapper.o build/cet_noblade/hostcalls.o \
-		-L $(LUCET_ROOT)/target/release \
-		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		-L $(LUCET_SIGHTGLASS_TARGET)/release \
+		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
 build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
