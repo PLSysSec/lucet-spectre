@@ -17,7 +17,7 @@ SHOOTOUT_SRCS:=$(shell ls $(SHOOTOUT)/*.c)
 SHOOTOUT_NATIVE_OBJS:=
 SHOOTOUT_LUCET_OBJS:=
 
-# Note this makefile builds the CET binaries only if REALLY_USE_CET is defined
+# Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
 	CET_SIGHTGLASS:=$(LUCET_ROOT)/target-cet/release/sightglass
 else
