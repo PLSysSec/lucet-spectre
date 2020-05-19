@@ -969,6 +969,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "lucet-unified"
+version = "0.1.0"
+dependencies = [
+ "lucet-module",
+ "lucet-runtime",
+ "lucet-runtime-internals",
+ "lucet-wasi",
+]
+
+[[package]]
 name = "lucet-validate"
 version = "0.7.0-dev"
 dependencies = [

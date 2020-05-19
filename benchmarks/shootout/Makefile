@@ -55,13 +55,13 @@ bench: run
 #	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
 #	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
 
-run: build
+run:
 	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
 	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
 
 	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv
-	
+
 	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c blade_sfi.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv
 
@@ -70,8 +70,6 @@ run: build
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
-
-
 
 
 .PHONY: build
@@ -207,8 +205,7 @@ build/blade/%.o: %.c
 		-DWASM_MODULE=$(abspath build/blade/module.so) \
 		-c $^ -o $@
 
-build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/lucet/implementation.so: build/lucet/wrapper.o
 build/lucet/implementation.so: build/lucet/hostcalls.o
 	@mkdir -p $(@D)
@@ -216,10 +213,9 @@ build/lucet/implementation.so: build/lucet/hostcalls.o
 		build/lucet/wrapper.o build/lucet/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/loadlfence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/loadlfence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/loadlfence/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/loadlfence/implementation.so: build/loadlfence/wrapper.o
 build/loadlfence/implementation.so: build/loadlfence/hostcalls.o
 	@mkdir -p $(@D)
@@ -227,10 +223,9 @@ build/loadlfence/implementation.so: build/loadlfence/hostcalls.o
 		build/loadlfence/wrapper.o build/loadlfence/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/strawman/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/strawman/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/strawman/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/strawman/implementation.so: build/strawman/wrapper.o
 build/strawman/implementation.so: build/strawman/hostcalls.o
 	@mkdir -p $(@D)
@@ -238,10 +233,9 @@ build/strawman/implementation.so: build/strawman/hostcalls.o
 		build/strawman/wrapper.o build/strawman/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/sfi/implementation.so: build/sfi/wrapper.o
 build/sfi/implementation.so: build/sfi/hostcalls.o
 	@mkdir -p $(@D)
@@ -249,10 +243,9 @@ build/sfi/implementation.so: build/sfi/hostcalls.o
 		build/sfi/wrapper.o build/sfi/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/cet/implementation.so: build/cet/wrapper.o
 build/cet/implementation.so: build/cet/hostcalls.o
 	@mkdir -p $(@D)
@@ -260,10 +253,9 @@ build/cet/implementation.so: build/cet/hostcalls.o
 		build/cet/wrapper.o build/cet/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/sfi_noblade/implementation.so: build/sfi_noblade/wrapper.o
 build/sfi_noblade/implementation.so: build/sfi_noblade/hostcalls.o
 	@mkdir -p $(@D)
@@ -271,10 +263,9 @@ build/sfi_noblade/implementation.so: build/sfi_noblade/hostcalls.o
 		build/sfi_noblade/wrapper.o build/sfi_noblade/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/cet_noblade/implementation.so: build/cet_noblade/wrapper.o
 build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
 	@mkdir -p $(@D)
@@ -282,10 +273,9 @@ build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
 		build/cet_noblade/wrapper.o build/cet_noblade/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_wasi.so
+build/blade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/blade/implementation.so: build/blade/wrapper.o
 build/blade/implementation.so: build/blade/hostcalls.o
 	@mkdir -p $(@D)
@@ -293,7 +283,7 @@ build/blade/implementation.so: build/blade/hostcalls.o
 		build/blade/wrapper.o build/blade/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		-llucet_runtime -llucet_wasi -ldl -lrt -o $@
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
 build/loadlfence/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
@@ -351,20 +341,9 @@ build/blade/module.so: build/lucet/module.wasm
 		$(BLADE_FLAGS) \
 		$< -o $@
 
-$(LUCET_ROOT)/target/release/sightglass:
-	cargo +nightly build --release -p sightglass
+$(LUCETC) $(LUCET_ROOT)/target/release/liblucet_unified.a $(LUCET_ROOT)/target/release/sightglass:
+	cargo build --release
 
-$(LUCETC):
-	cargo +nightly build --release -p lucetc
-
-.PHONY: $(LUCET_ROOT)/target/release/liblucet_runtime.so
-$(LUCET_ROOT)/target/release/liblucet_runtime.so:
-	cargo +nightly build --release -p lucet-runtime
-
-
-.PHONY: $(LUCET_ROOT)/target/release/liblucet_wasi.so
-$(LUCET_ROOT)/target/release/liblucet_wasi.so:
-	cargo +nightly build --release -p lucet-wasi
 
 .PHONY: clean
 clean:
