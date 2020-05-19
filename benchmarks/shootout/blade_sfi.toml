@@ -1,0 +1,32 @@
+# Test suites to run
+test_suites = [
+  { name = "0.Reference", library_path = "./build/lucet/implementation.so" },
+  { name = "2.loadlfence", library_path = "./build/loadlfence/implementation.so" },
+  { name = "3.strawman", library_path = "./build/strawman/implementation.so" },
+  { name = "4.sfi", library_path = "./build/sfi/implementation.so" },
+  { name = "5.sfi_noblade", library_path = "./build/sfi_noblade/implementation.so" },
+  { name = "6.blade", library_path = "./build/blade/implementation.so" },
+]
+
+# Pin the process to a single CPU core (Linux only)
+single_core = true
+
+# Supported output formats: Text, JSON and CSV
+# Outputs to stdout if no file name is provided
+output = [
+  { format = "Text" },
+  { format = "JSON", file = "/tmp/blade_sfi-latest.json" },
+  { format = "CSV", file = "/tmp/blade_sfi-latest.csv" }
+]
+
+# Minimum number of rounds to perform for each test
+initial_round_size = 1
+
+# Minimum number of samples to collect for each test
+min_sample_size = 10
+
+# Minimum time for a test has to run, in milliseconds, to record a sample
+min_run_time_ms = 100
+
+# Maximum time for a test to run
+max_run_time_ms = 2000

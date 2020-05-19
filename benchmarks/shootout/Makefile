@@ -47,13 +47,32 @@ default: run
 bench: run
 
 .PHONY: run
+#run: build
+#	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
+#	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
+#	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
+#	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
+#	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
+#	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
+
 run: build
-	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
 	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
 	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
-	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
+
+	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv
+	
+	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c blade_sfi.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv
+
+	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c cet.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
+
+
+
 
 .PHONY: build
 build: $(LUCETC)
@@ -333,19 +352,19 @@ build/blade/module.so: build/lucet/module.wasm
 		$< -o $@
 
 $(LUCET_ROOT)/target/release/sightglass:
-	cargo build --release -p sightglass
+	cargo +nightly build --release -p sightglass
 
 $(LUCETC):
-	cargo build --release -p lucetc
+	cargo +nightly build --release -p lucetc
 
 .PHONY: $(LUCET_ROOT)/target/release/liblucet_runtime.so
 $(LUCET_ROOT)/target/release/liblucet_runtime.so:
-	cargo build --release -p lucet-runtime
+	cargo +nightly build --release -p lucet-runtime
 
 
 .PHONY: $(LUCET_ROOT)/target/release/liblucet_wasi.so
 $(LUCET_ROOT)/target/release/liblucet_wasi.so:
-	cargo build --release -p lucet-wasi
+	cargo +nightly build --release -p lucet-wasi
 
 .PHONY: clean
 clean:
