@@ -156,9 +156,18 @@ impl DlModule {
         };
         let module_data = ModuleData::deserialize(module_data_slice)?;
         let features = module_data.features();
+
+        let spectre_mitigation =
+            Some(FromPrimitive::from_u16(features.spectre_mitigation_scheme).unwrap());
+        let spectre_only_sandbox_isolation = features.spectre_only_sandbox_isolation;
+        let spectre_pht_mitigation = cranelift_spectre::settings::get_default_pht_protection(
+            spectre_mitigation,
+            spectre_only_sandbox_isolation,
+        );
         cranelift_spectre::settings::use_spectre_mitigation_settings(
-            Some(FromPrimitive::from_u16(features.spectre_mitigation_scheme).unwrap()),
-            None,
+            spectre_mitigation,
+            spectre_pht_mitigation,
+            spectre_only_sandbox_isolation,
         );
         check_feature_support(features)?;
 

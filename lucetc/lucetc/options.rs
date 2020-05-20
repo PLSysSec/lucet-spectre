@@ -235,20 +235,26 @@ impl Options {
             .value_of("spectre_mitigation")
             .map(|m| m.parse::<SpectreMitigation>().unwrap());
 
-        let mut spectre_pht_mitigation = m
+        let spectre_pht_mitigation = m
             .value_of("spectre_pht_mitigation")
             .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
 
-        if spectre_pht_mitigation.is_none()
-            && (spectre_mitigation == SpectreMitigation::SFI.into()
-                || spectre_mitigation == SpectreMitigation::CET.into())
-        {
-            spectre_pht_mitigation = Some(SpectrePHTMitigation::BLADE);
-        }
+        let spectre_only_sandbox_isolation = m.is_present("spectre_only_sandbox_isolation");
+
+        let spectre_mitigation_converted = spectre_mitigation.clone().map(|m| m.into());
+        let spectre_pht_mitigation_converted = if spectre_pht_mitigation.is_some() {
+            spectre_pht_mitigation.clone().map(|m| m.into())
+        } else {
+            cranelift_spectre::settings::get_default_pht_protection(
+                spectre_mitigation_converted,
+                spectre_only_sandbox_isolation,
+            )
+        };
 
         cranelift_spectre::settings::use_spectre_mitigation_settings(
-            spectre_mitigation.clone().map(|m| m.into()),
-            spectre_pht_mitigation.clone().map(|m| m.into()),
+            spectre_mitigation_converted,
+            spectre_pht_mitigation_converted,
+            spectre_only_sandbox_isolation,
         );
 
         let target = match m.value_of("target") {
@@ -489,10 +495,16 @@ SSE3 but not AVX:
                     .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet."),
             )
             .arg(
+                Arg::with_name("spectre_only_sandbox_isolation")
+                    .long("--spectre-only-sandbox-isolation")
+                    .takes_value(false)
+                    .help("Only enable spectre mitigations for sandbox isolation. Disables cross sandbox confused deputy protections")
+            )
+            .arg(
                 Arg::with_name("spectre_pht_mitigation")
                     .long("--spectre-pht-mitigation")
                     .takes_value(true)
-                    .help("Internal flag for testing only. This is automatically enabled by --spectre-mitigation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
+                    .help("Internal flag for testing only. This is automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
             )
             .arg(
                 Arg::with_name("keygen")
