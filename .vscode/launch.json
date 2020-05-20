@@ -32,6 +32,7 @@
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigation", "sfi",
+                "--spectre-disable-core-switching",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",

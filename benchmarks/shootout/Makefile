@@ -31,12 +31,12 @@ endif
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
 
-LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence
-STRAWMAN_FLAGS:=--spectre-mitigation=strawman
-SFI_FLAGS:=--spectre-mitigation=sfi
-CET_FLAGS:=--spectre-mitigation=cet
-SFI_NOBLADE_FLAGS:=--spectre-mitigation=sfi --spectre-pht-mitigation=none
-CET_NOBLADE_FLAGS:=--spectre-mitigation=cet --spectre-pht-mitigation=none
+LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
+STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
+SFI_FLAGS:=--spectre-mitigation=sfi --spectre-disable-core-switching
+CET_FLAGS:=--spectre-mitigation=cet --spectre-disable-core-switching
+SFI_SBXONLY_FLAGS:=--spectre-mitigation=sfi --spectre-only-sandbox-isolation --spectre-disable-core-switching
+CET_SBXONLY_FLAGS:=--spectre-mitigation=cet --spectre-only-sandbox-isolation --spectre-disable-core-switching
 BLADE_FLAGS:=--spectre-pht-mitigation=blade
 
 
@@ -68,18 +68,29 @@ bench: run
 
 run:
 	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
-	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/both
 
 	$(LUCET_ROOT)/target/release/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv
+	cp /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv
+	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/reference-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c blade_sfi.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c sbxonly_sfi.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c sbxonly_cet.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sbxonly_cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
 
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/blade_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/cet-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c both_sfi.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/both_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_sfi-latest.csv
+
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c both_cet.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/both_cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/both/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
+
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
 
 
@@ -102,11 +113,11 @@ build: build/sfi/module.so
 build: build/cet/implementation.so
 build: build/cet/module.so
 
-build: build/sfi_noblade/implementation.so
-build: build/sfi_noblade/module.so
+build: build/sfi_sbxonly/implementation.so
+build: build/sfi_sbxonly/module.so
 
-build: build/cet_noblade/implementation.so
-build: build/cet_noblade/module.so
+build: build/cet_sbxonly/implementation.so
+build: build/cet_sbxonly/module.so
 
 build: build/blade/implementation.so
 build: build/blade/module.so
@@ -191,21 +202,21 @@ build/cet/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/cet/module.so) \
 		-c $^ -o $@
-build/sfi_noblade/%.o: %.c
+build/sfi_sbxonly/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/sfi_noblade/module.so) \
+		-DWASM_MODULE=$(abspath build/sfi_sbxonly/module.so) \
 		-c $^ -o $@
-build/cet_noblade/%.o: %.c
+build/cet_sbxonly/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) $(CET_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/cet_noblade/module.so) \
+		-DWASM_MODULE=$(abspath build/cet_sbxonly/module.so) \
 		-c $^ -o $@
 build/blade/%.o: %.c
 	@mkdir -p $(@D)
@@ -266,22 +277,22 @@ build/cet/implementation.so: build/cet/hostcalls.o
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/sfi_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/sfi_noblade/implementation.so: build/sfi_noblade/wrapper.o
-build/sfi_noblade/implementation.so: build/sfi_noblade/hostcalls.o
+build/sfi_sbxonly/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/sfi_sbxonly/implementation.so: build/sfi_sbxonly/wrapper.o
+build/sfi_sbxonly/implementation.so: build/sfi_sbxonly/hostcalls.o
 	@mkdir -p $(@D)
 	$(CC) -rdynamic -shared \
-		build/sfi_noblade/wrapper.o build/sfi_noblade/hostcalls.o \
+		build/sfi_sbxonly/wrapper.o build/sfi_sbxonly/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cet_noblade/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/cet_noblade/implementation.so: build/cet_noblade/wrapper.o
-build/cet_noblade/implementation.so: build/cet_noblade/hostcalls.o
+build/cet_sbxonly/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/cet_sbxonly/implementation.so: build/cet_sbxonly/wrapper.o
+build/cet_sbxonly/implementation.so: build/cet_sbxonly/hostcalls.o
 	@mkdir -p $(@D)
 	$(CC) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
-		build/cet_noblade/wrapper.o build/cet_noblade/hostcalls.o \
+		build/cet_sbxonly/wrapper.o build/cet_sbxonly/hostcalls.o \
 		-L $(LUCET_SIGHTGLASS_TARGET)/release \
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
@@ -328,20 +339,20 @@ build/cet/module.so: build/lucet/module.wasm
 		$(CET_FLAGS) \
 		$< -o $@
 
-build/sfi_noblade/module.so: build/lucet/module.wasm
+build/sfi_sbxonly/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(SFI_NOBLADE_FLAGS) \
+		$(SFI_SBXONLY_FLAGS) \
 		$< -o $@
 
-build/cet_noblade/module.so: build/lucet/module.wasm
+build/cet_sbxonly/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CET_NOBLADE_FLAGS) \
+		$(CET_SBXONLY_FLAGS) \
 		$< -o $@
 
 build/blade/module.so: build/lucet/module.wasm

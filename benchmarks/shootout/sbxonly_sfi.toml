@@ -1,7 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "7.cet", library_path = "./build/cet/implementation.so" },
-  { name = "8.cet_noblade", library_path = "./build/cet_noblade/implementation.so" },
+  { name = "3.sfi_sbxonly", library_path = "./build/sfi_sbxonly/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
@@ -11,8 +10,8 @@ single_core = true
 # Outputs to stdout if no file name is provided
 output = [
   { format = "Text" },
-  { format = "JSON", file = "/tmp/cet-latest.json" },
-  { format = "CSV", file = "/tmp/cet-latest.csv" }
+  { format = "JSON", file = "/tmp/sbxonly_sfi-latest.json" },
+  { format = "CSV", file = "/tmp/sbxonly_sfi-latest.csv" }
 ]
 
 # Minimum number of rounds to perform for each test

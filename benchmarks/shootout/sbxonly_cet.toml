@@ -1,7 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "1.Reference", library_path = "./build/lucet/implementation.so" },
-  { name = "2.strawman", library_path = "./build/strawman/implementation.so" },
+  { name = "4.cet_sbxonly", library_path = "./build/cet_sbxonly/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
@@ -11,8 +10,8 @@ single_core = true
 # Outputs to stdout if no file name is provided
 output = [
   { format = "Text" },
-  { format = "JSON", file = "/tmp/reference-latest.json" },
-  { format = "CSV", file = "/tmp/reference-latest.csv" }
+  { format = "JSON", file = "/tmp/sbxonly_cet-latest.json" },
+  { format = "CSV", file = "/tmp/sbxonly_cet-latest.csv" }
 ]
 
 # Minimum number of rounds to perform for each test
