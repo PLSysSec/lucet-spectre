@@ -1,6 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "3.sfi_sbxonly", library_path = "./build/sfi_sbxonly/implementation.so" },
+  { name = "2.sfi_sbxonly", library_path = "./build/sfi_sbxonly/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
