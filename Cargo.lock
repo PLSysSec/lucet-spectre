@@ -356,6 +356,10 @@ dependencies = [
 [[package]]
 name = "cranelift-spectre"
 version = "0.1.0"
+dependencies = [
+ "num-derive",
+ "num-traits",
+]
 
 [[package]]
 name = "cranelift-wasm"
@@ -821,6 +825,7 @@ dependencies = [
 name = "lucet-benchmarks"
 version = "0.7.0-dev"
 dependencies = [
+ "cranelift-spectre",
  "criterion",
  "libc",
  "lucet-module",
@@ -839,6 +844,7 @@ dependencies = [
 name = "lucet-concurrency-tests"
 version = "0.7.0-dev"
 dependencies = [
+ "cranelift-spectre",
  "libc",
  "lucet-module",
  "lucet-runtime",
@@ -854,6 +860,7 @@ dependencies = [
  "bincode",
  "byteorder",
  "cranelift-entity",
+ "cranelift-spectre",
  "derivative",
  "memoffset",
  "minisign",
@@ -883,6 +890,7 @@ dependencies = [
  "anyhow",
  "byteorder",
  "cc",
+ "cranelift-spectre",
  "lazy_static",
  "libc",
  "lucet-module",
@@ -914,6 +922,7 @@ dependencies = [
  "bitflags 1.2.1",
  "byteorder",
  "cc",
+ "cranelift-spectre",
  "lazy_static",
  "libc",
  "libloading",
@@ -957,6 +966,7 @@ name = "lucet-spectest"
 version = "0.7.0-dev"
 dependencies = [
  "clap",
+ "cranelift-spectre",
  "lucet-module",
  "lucet-runtime",
  "lucetc",
@@ -1000,6 +1010,7 @@ dependencies = [
  "anyhow",
  "cast",
  "clap",
+ "cranelift-spectre",
  "human-size",
  "libc",
  "lucet-module",

@@ -102,13 +102,7 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #raw_sig {
             #[inline(always)]
             #hostcall
-
-            //lfence before hostcall
-            asm!("lfence"
-                :
-                :
-                : "volatile"
-            );
+            cranelift_spectre::runtime::perform_transition_protection_out();
             let mut vmctx = #vmctx_mod::Vmctx::from_raw(vmctx_raw);
             let ret = #vmctx_mod::VmctxInternal::instance_mut(&mut vmctx).uninterruptable(|| {
                 let res = std::panic::catch_unwind(move || {
@@ -126,12 +120,7 @@ pub fn lucet_hostcall(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     }
                 }
             });
-            //lfence after hostcall
-            asm!("lfence"
-                :
-                :
-                : "volatile"
-            );
+            cranelift_spectre::runtime::perform_transition_protection_in();
             ret
         }
     };

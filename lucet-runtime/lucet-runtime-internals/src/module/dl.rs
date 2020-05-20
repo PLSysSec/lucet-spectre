@@ -4,8 +4,9 @@ use libc::c_void;
 use libloading::Library;
 use lucet_module::{
     FunctionHandle, FunctionIndex, FunctionPointer, FunctionSpec, ModuleData, ModuleFeatures,
-    ModuleSignature, PublicKey, SerializedModule, Signature, VersionInfo, LUCET_MODULE_SYM,
+    ModuleSignature, PublicKey, SerializedModule, Signature, LUCET_MODULE_SYM,
 };
+use num_traits::FromPrimitive;
 use std::ffi::CStr;
 use std::mem::MaybeUninit;
 use std::path::Path;
@@ -154,8 +155,12 @@ impl DlModule {
             )
         };
         let module_data = ModuleData::deserialize(module_data_slice)?;
-
-        check_feature_support(module_data.features())?;
+        let features = module_data.features();
+        cranelift_spectre::settings::use_spectre_mitigation_settings(
+            Some(FromPrimitive::from_u16(features.spectre_mitigation_scheme).unwrap()),
+            None,
+        );
+        check_feature_support(features)?;
 
         // If a public key has been provided, verify the module signature
         // The TOCTOU issue is unavoidable without reimplenting `dlopen(3)`

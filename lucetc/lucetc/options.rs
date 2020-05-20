@@ -126,7 +126,7 @@ pub struct Options {
 }
 
 arg_enum! {
-    #[derive(PartialEq, Debug, Clone)]
+    #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum SpectreMitigation {
         NONE,
         LOADLFENCE,
@@ -137,7 +137,7 @@ arg_enum! {
 }
 
 arg_enum! {
-    #[derive(PartialEq, Debug, Clone)]
+    #[derive(PartialEq, Debug, Clone, Copy)]
     pub enum SpectrePHTMitigation {
         NONE,
         BLADE,

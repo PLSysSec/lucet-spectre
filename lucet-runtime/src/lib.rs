@@ -374,7 +374,6 @@
 //! this number could change between Lucet releases or even Rust compiler versions.
 //!
 //! [default-sigstack-size]: constant.DEFAULT_SIGNAL_STACK_SIZE.html
-#![feature(asm)]
 #![deny(bare_trait_objects)]
 
 // This makes `lucet_runtime` in the expansion of `#[lucet_hostcall]` resolve to something

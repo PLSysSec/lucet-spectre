@@ -61,6 +61,7 @@ pub struct ModuleFeatures {
     pub instruction_count: bool,
     pub pinned_heap: bool,
     pub pinned_heap_register: u16,
+    pub spectre_mitigation_scheme: u16,
     _hidden: (),
 }
 
@@ -79,6 +80,7 @@ impl ModuleFeatures {
             instruction_count: false,
             pinned_heap: false,
             pinned_heap_register: 0,
+            spectre_mitigation_scheme: cranelift_spectre::settings::SpectreMitigation::NONE as u16,
             _hidden: (),
         }
     }

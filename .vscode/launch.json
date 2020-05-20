@@ -77,7 +77,7 @@
                  "--max-heap-size", "4GiB",
                  "--stack-size", "8MiB",
                  "--dir", "/:/",
-                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.so"
+                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_sfi.so"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -80,6 +80,9 @@ fn detect_features(features: &mut ModuleFeatures) {
         features.popcnt = info.has_popcnt();
     }
 
+    features.spectre_mitigation_scheme =
+        cranelift_spectre::settings::get_spectre_mitigation() as u16;
+
     if let Some(info) = cpuid.get_extended_feature_info() {
         features.bmi1 = info.has_bmi1();
         features.bmi2 = info.has_bmi2();

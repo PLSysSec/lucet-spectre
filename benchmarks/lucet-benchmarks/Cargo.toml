@@ -22,6 +22,7 @@ nix = "0.17"
 num_cpus = "1.0"
 rayon = "1.0"
 tempfile = "3.0"
+cranelift-spectre = { path = "../../wasmtime/cranelift-spectre", version = "0.1.0" }
 
 [lib]
 bench = false

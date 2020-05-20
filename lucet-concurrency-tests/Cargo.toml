@@ -15,3 +15,4 @@ lucet-runtime = { path = "../lucet-runtime", version = "=0.7.0-dev", features = 
 lucet-runtime-tests = { path = "../lucet-runtime/lucet-runtime-tests", version = "=0.7.0-dev" }
 lucet-runtime-internals = { path = "../lucet-runtime/lucet-runtime-internals", version = "=0.7.0-dev", features = ["concurrent_testpoints"] }
 libc = "0.2.65"
+cranelift-spectre = { path = "../wasmtime/cranelift-spectre", version = "0.1.0" }

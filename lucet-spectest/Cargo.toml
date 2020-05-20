@@ -27,3 +27,4 @@ clap="2.32"
 tempfile = "3.0"
 target-lexicon = "0.10"
 thiserror = "1.0.4"
+cranelift-spectre = { path = "../wasmtime/cranelift-spectre", version = "0.1.0" }

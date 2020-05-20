@@ -698,6 +698,16 @@ fn stack_is_aligned(stack: &[u64]) -> bool {
     bottom_addr % 16 == 0
 }
 
+#[no_mangle]
+pub extern "C" fn perform_transition_protection_in() {
+    return cranelift_spectre::runtime::perform_transition_protection_in();
+}
+
+#[no_mangle]
+pub extern "C" fn perform_transition_protection_out() {
+    cranelift_spectre::runtime::perform_transition_protection_out();
+}
+
 extern "C" {
     /// Bootstraps arguments and calls the entrypoint via returning; implemented in assembly.
     ///

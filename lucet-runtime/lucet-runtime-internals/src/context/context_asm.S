@@ -54,12 +54,10 @@ _lucet_context_bootstrap:
     pop %r11
     // align stack
     push %r11
-    //fence the transition in
-    lfence
+    call perform_transition_protection_in@PLT
     // call guest ptr
     call *%r11
-    //fence the transition out
-    lfence
+    call perform_transition_protection_out@PLT
     //undo align
     pop %r11
     // go to backstop
