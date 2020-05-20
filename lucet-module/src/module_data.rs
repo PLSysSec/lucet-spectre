@@ -63,6 +63,7 @@ pub struct ModuleFeatures {
     pub pinned_heap_register: u16,
     pub spectre_mitigation_scheme: u16,
     pub spectre_only_sandbox_isolation: bool,
+    pub spectre_disable_core_switching: bool,
     _hidden: (),
 }
 
@@ -83,6 +84,7 @@ impl ModuleFeatures {
             pinned_heap_register: 0,
             spectre_mitigation_scheme: cranelift_spectre::settings::SpectreMitigation::NONE as u16,
             spectre_only_sandbox_isolation: false,
+            spectre_disable_core_switching: false,
             _hidden: (),
         }
     }

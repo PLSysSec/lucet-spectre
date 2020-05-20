@@ -240,6 +240,7 @@ impl Options {
             .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
 
         let spectre_only_sandbox_isolation = m.is_present("spectre_only_sandbox_isolation");
+        let spectre_disable_core_switching = m.is_present("spectre_disable_core_switching");
 
         let spectre_mitigation_converted = spectre_mitigation.clone().map(|m| m.into());
         let spectre_pht_mitigation_converted = if spectre_pht_mitigation.is_some() {
@@ -255,6 +256,7 @@ impl Options {
             spectre_mitigation_converted,
             spectre_pht_mitigation_converted,
             spectre_only_sandbox_isolation,
+            spectre_disable_core_switching,
         );
 
         let target = match m.value_of("target") {
@@ -499,6 +501,12 @@ SSE3 but not AVX:
                     .long("--spectre-only-sandbox-isolation")
                     .takes_value(false)
                     .help("Only enable spectre mitigations for sandbox isolation. Disables cross sandbox confused deputy protections")
+            )
+            .arg(
+                Arg::with_name("spectre_disable_core_switching")
+                    .long("--spectre-disable-core-switching")
+                    .takes_value(false)
+                    .help("Internal flag for testing only. Disable core switching if needed on spectre mitigations")
             )
             .arg(
                 Arg::with_name("spectre_pht_mitigation")

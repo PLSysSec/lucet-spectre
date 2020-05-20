@@ -84,6 +84,7 @@ fn detect_features(features: &mut ModuleFeatures) {
         cranelift_spectre::settings::get_spectre_mitigation() as u16;
     features.spectre_only_sandbox_isolation =
         cranelift_spectre::settings::get_spectre_only_sandbox_isolation();
+    features.spectre_disable_core_switching = cranelift_spectre::settings::get_spectre_disable_core_switching();
 
     if let Some(info) = cpuid.get_extended_feature_info() {
         features.bmi1 = info.has_bmi1();

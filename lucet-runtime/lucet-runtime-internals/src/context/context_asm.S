@@ -42,6 +42,7 @@ _lucet_context_bootstrap:
     endbr64
     // Move each of the argument values into the corresponding call
     // argument register.
+    call perform_transition_protection_in@PLT
     pop %r9
     pop %r8
     pop %rcx
@@ -54,10 +55,8 @@ _lucet_context_bootstrap:
     pop %r11
     // align stack
     push %r11
-    call perform_transition_protection_in@PLT
     // call guest ptr
     call *%r11
-    call perform_transition_protection_out@PLT
     //undo align
     pop %r11
     // go to backstop
@@ -80,11 +79,12 @@ _lucet_context_backstop:
     endbr64
     // Note that `rbp` here really has no relation to any stack!
     // Instead, it's a pointer to the guest context.
-    mov (10*8 + 8*16 + 8*2 + 16)(%rbp), %rdi /* load the parent context to forward values in return value registers */
     mov %rax, (10*8 + 8*16 + 8*0)(%rbp) /* store return values before swapping back -- offset is offsetof(struct lucet_context, retvals) */
     mov %rdx, (10*8 + 8*16 + 8*1)(%rbp)
     movdqu %xmm0, (10*8 + 8*16 + 8*2)(%rbp) /* floating-point return value */
 
+    call perform_transition_protection_out@PLT
+    mov (10*8 + 8*16 + 8*2 + 16)(%rbp), %rdi /* load the parent context to forward values in return value registers */
     // load `backstop_callback`, but skip calling it if it's null
     mov (10*8 + 8*16 + 8*2 + 16 + 8)(%rbp), %rsi
     test %rsi, %rsi
