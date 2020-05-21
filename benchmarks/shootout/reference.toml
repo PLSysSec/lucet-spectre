@@ -1,6 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "1.Stock Lucet", library_path = "./build/lucet/implementation.so" },
+  { name = "1.Stock", library_path = "./build/lucet/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)

@@ -1,8 +1,8 @@
 # Test suites to run
 test_suites = [
-  { name = "2.strawman", library_path = "./build/strawman/implementation.so" },
-  { name = "3.loadlfence", library_path = "./build/loadlfence/implementation.so" },
-  { name = "4.sfi", library_path = "./build/sfi/implementation.so" },
+  { name = "2.Strawman", library_path = "./build/strawman/implementation.so" },
+  { name = "3.Loadlfence", library_path = "./build/loadlfence/implementation.so" },
+  { name = "4.Sfi", library_path = "./build/sfi/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)

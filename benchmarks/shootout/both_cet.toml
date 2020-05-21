@@ -1,6 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "5.cet", library_path = "./build/cet/implementation.so" },
+  { name = "5.Cet", library_path = "./build/cet/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
