@@ -87,7 +87,7 @@ run:
 	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c both_cet.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/both_cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
 
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py --usePercent $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/both/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
 
