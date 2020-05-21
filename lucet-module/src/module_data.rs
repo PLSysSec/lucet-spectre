@@ -64,6 +64,7 @@ pub struct ModuleFeatures {
     pub spectre_mitigation_scheme: u16,
     pub spectre_only_sandbox_isolation: bool,
     pub spectre_disable_core_switching: bool,
+    pub spectre_disable_btbflush: bool,
     _hidden: (),
 }
 
@@ -85,6 +86,7 @@ impl ModuleFeatures {
             spectre_mitigation_scheme: cranelift_spectre::settings::SpectreMitigation::NONE as u16,
             spectre_only_sandbox_isolation: false,
             spectre_disable_core_switching: false,
+            spectre_disable_btbflush: false,
             _hidden: (),
         }
     }

@@ -33,7 +33,7 @@ COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLAS
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
-SFI_FLAGS:=--spectre-mitigation=sfi --spectre-disable-core-switching
+SFI_FLAGS:=--spectre-mitigation=sfi --spectre-disable-core-switching --spectre-disable-btbflush
 CET_FLAGS:=--spectre-mitigation=cet --spectre-disable-core-switching
 SFI_SBXONLY_FLAGS:=--spectre-mitigation=sfi --spectre-only-sandbox-isolation --spectre-disable-core-switching
 CET_SBXONLY_FLAGS:=--spectre-mitigation=cet --spectre-only-sandbox-isolation --spectre-disable-core-switching

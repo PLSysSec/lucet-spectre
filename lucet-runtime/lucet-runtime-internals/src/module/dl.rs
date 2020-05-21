@@ -169,6 +169,7 @@ impl DlModule {
             spectre_pht_mitigation,
             spectre_only_sandbox_isolation,
             features.spectre_disable_core_switching,
+            features.spectre_disable_btbflush,
         );
         check_feature_support(features)?;
 

@@ -241,6 +241,7 @@ impl Options {
 
         let spectre_only_sandbox_isolation = m.is_present("spectre_only_sandbox_isolation");
         let spectre_disable_core_switching = m.is_present("spectre_disable_core_switching");
+        let spectre_disable_btbflush = m.is_present("spectre_disable_btbflush");
 
         let spectre_mitigation_converted = spectre_mitigation.clone().map(|m| m.into());
         let spectre_pht_mitigation_converted = if spectre_pht_mitigation.is_some() {
@@ -257,6 +258,7 @@ impl Options {
             spectre_pht_mitigation_converted,
             spectre_only_sandbox_isolation,
             spectre_disable_core_switching,
+            spectre_disable_btbflush,
         );
 
         let target = match m.value_of("target") {
@@ -506,13 +508,19 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_disable_core_switching")
                     .long("--spectre-disable-core-switching")
                     .takes_value(false)
-                    .help("Internal flag for testing only. Disable core switching if needed on spectre mitigations")
+                    .help("Internal flag for testing only. Disable core switching even if needed on spectre mitigations")
+            )
+            .arg(
+                Arg::with_name("spectre_disable_btbflush")
+                    .long("--spectre-disable-btbflush")
+                    .takes_value(false)
+                    .help("Internal flag for testing only. Disable BTBflush even if needed on spectre mitigations")
             )
             .arg(
                 Arg::with_name("spectre_pht_mitigation")
                     .long("--spectre-pht-mitigation")
                     .takes_value(true)
-                    .help("Internal flag for testing only. This is automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
+                    .help("Internal flag for testing only. Override the pht protections automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
             )
             .arg(
                 Arg::with_name("keygen")
