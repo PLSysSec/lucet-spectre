@@ -285,7 +285,9 @@ impl Options {
         let pk_path = m.value_of("pk_path").map(PathBuf::from);
         let count_instructions = m.is_present("count_instructions");
         let pinned_heap =
-            spectre_mitigation == Some(SpectreMitigation::SFI) || m.is_present("pinned_heap");
+            spectre_mitigation == Some(SpectreMitigation::SFI) ||
+            spectre_mitigation == Some(SpectreMitigation::CET) ||
+            m.is_present("pinned_heap");
 
         let error_style = match m.value_of("error_style") {
             None => ErrorStyle::default(),
