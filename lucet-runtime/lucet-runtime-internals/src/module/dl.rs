@@ -160,14 +160,17 @@ impl DlModule {
         let spectre_mitigation =
             Some(FromPrimitive::from_u16(features.spectre_mitigation_scheme).unwrap());
         let spectre_only_sandbox_isolation = features.spectre_only_sandbox_isolation;
+        let spectre_no_cross_sbx_attacks = features.spectre_no_cross_sbx_attacks;
         let spectre_pht_mitigation = cranelift_spectre::settings::get_default_pht_protection(
             spectre_mitigation,
             spectre_only_sandbox_isolation,
+            spectre_no_cross_sbx_attacks,
         );
         cranelift_spectre::settings::use_spectre_mitigation_settings(
             spectre_mitigation,
             spectre_pht_mitigation,
             spectre_only_sandbox_isolation,
+            spectre_no_cross_sbx_attacks,
             features.spectre_disable_core_switching,
             features.spectre_disable_btbflush,
         );

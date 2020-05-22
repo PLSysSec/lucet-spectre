@@ -84,6 +84,8 @@ fn detect_features(features: &mut ModuleFeatures) {
         cranelift_spectre::settings::get_spectre_mitigation() as u16;
     features.spectre_only_sandbox_isolation =
         cranelift_spectre::settings::get_spectre_only_sandbox_isolation();
+    features.spectre_no_cross_sbx_attacks =
+        cranelift_spectre::settings::get_spectre_no_cross_sbx_attacks();
     features.spectre_disable_core_switching = cranelift_spectre::settings::get_spectre_disable_core_switching();
     features.spectre_disable_btbflush = cranelift_spectre::settings::get_spectre_disable_btbflush();
 

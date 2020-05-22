@@ -240,6 +240,7 @@ impl Options {
             .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
 
         let spectre_only_sandbox_isolation = m.is_present("spectre_only_sandbox_isolation");
+        let spectre_no_cross_sbx_attacks = m.is_present("spectre_no_cross_sbx_attacks");
         let spectre_disable_core_switching = m.is_present("spectre_disable_core_switching");
         let spectre_disable_btbflush = m.is_present("spectre_disable_btbflush");
 
@@ -250,6 +251,7 @@ impl Options {
             cranelift_spectre::settings::get_default_pht_protection(
                 spectre_mitigation_converted,
                 spectre_only_sandbox_isolation,
+                spectre_no_cross_sbx_attacks,
             )
         };
 
@@ -257,6 +259,7 @@ impl Options {
             spectre_mitigation_converted,
             spectre_pht_mitigation_converted,
             spectre_only_sandbox_isolation,
+            spectre_no_cross_sbx_attacks,
             spectre_disable_core_switching,
             spectre_disable_btbflush,
         );
@@ -504,7 +507,13 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_only_sandbox_isolation")
                     .long("--spectre-only-sandbox-isolation")
                     .takes_value(false)
-                    .help("Only enable spectre mitigations for sandbox isolation. Disables cross sandbox confused deputy protections")
+                    .help("Only enable spectre mitigations for sandbox isolation. Disables sandbox to app and cross sandbox confused deputy protections")
+            )
+            .arg(
+                Arg::with_name("spectre_no_cross_sbx_attacks")
+                    .long("--spectre-no-cross-sbx-attacks")
+                    .takes_value(false)
+                    .help("Only enable spectre mitigations for sandbox isolation and sandbox to app protection. Disables cross sandbox confused deputy protections")
             )
             .arg(
                 Arg::with_name("spectre_disable_core_switching")
