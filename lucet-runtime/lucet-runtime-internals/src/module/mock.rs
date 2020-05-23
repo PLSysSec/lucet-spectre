@@ -260,6 +260,10 @@ unsafe impl Sync for MockModule {}
 impl Module for MockModule {}
 
 impl ModuleInternal for MockModule {
+    fn get_spectre_protections(&self) -> cranelift_spectre::settings::SpectreSettings {
+        panic!("Not implemented");
+    }
+
     fn is_instruction_count_instrumented(&self) -> bool {
         self.module_data.features().instruction_count
     }

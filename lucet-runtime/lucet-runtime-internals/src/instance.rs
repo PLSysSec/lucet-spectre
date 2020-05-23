@@ -971,6 +971,7 @@ impl Instance {
         }
 
         self.entrypoint = Some(func);
+        cranelift_spectre::runtime::use_spectre_mitigation_runtime_settings(self.module.get_spectre_protections());
 
         let heap = self.alloc.slot().heap;
         let mut args_with_vmctx = vec![Val::from(heap)];

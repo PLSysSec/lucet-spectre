@@ -38,6 +38,8 @@ pub trait Module: ModuleInternal {
 }
 
 pub trait ModuleInternal: Send + Sync {
+    fn get_spectre_protections(&self) -> cranelift_spectre::settings::SpectreSettings;
+
     /// Determine whether this module has been instrumented with additional
     /// instructions that monitor the number of wasm operations executed
     /// during runtime.

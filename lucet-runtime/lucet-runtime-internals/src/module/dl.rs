@@ -86,6 +86,8 @@ pub struct DlModule {
 
     /// Metadata decoded from inside the module
     module: lucet_module::Module<'static>,
+
+    pub spectre_settings: cranelift_spectre::settings::SpectreSettings,
 }
 
 // for the one raw pointer only
@@ -166,14 +168,15 @@ impl DlModule {
             spectre_only_sandbox_isolation,
             spectre_no_cross_sbx_attacks,
         );
-        cranelift_spectre::settings::use_spectre_mitigation_settings(
-            spectre_mitigation,
-            spectre_pht_mitigation,
+        let spectre_settings = cranelift_spectre::settings::SpectreSettings {
+            spectre_mitigation: spectre_mitigation.unwrap(),
+            spectre_pht_mitigation: spectre_pht_mitigation.unwrap(),
             spectre_only_sandbox_isolation,
             spectre_no_cross_sbx_attacks,
-            features.spectre_disable_core_switching,
-            features.spectre_disable_btbflush,
-        );
+            spectre_disable_core_switching: features.spectre_disable_core_switching,
+            spectre_disable_btbflush: features.spectre_disable_btbflush,
+        };
+
         check_feature_support(features)?;
 
         // If a public key has been provided, verify the module signature
@@ -220,6 +223,7 @@ impl DlModule {
                 tables,
                 function_manifest,
             },
+            spectre_settings,
         }))
     }
 }
@@ -227,6 +231,9 @@ impl DlModule {
 impl Module for DlModule {}
 
 impl ModuleInternal for DlModule {
+    fn get_spectre_protections(&self) -> cranelift_spectre::settings::SpectreSettings{
+        return self.spectre_settings.clone();
+    }
     fn is_instruction_count_instrumented(&self) -> bool {
         self.module.module_data.features().instruction_count
     }
