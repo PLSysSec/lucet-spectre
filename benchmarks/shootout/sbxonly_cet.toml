@@ -15,13 +15,13 @@ output = [
 ]
 
 # Minimum number of rounds to perform for each test
-initial_round_size = 1
+initial_round_size = 10
 
 # Minimum number of samples to collect for each test
-min_sample_size = 10
+min_sample_size = 100
 
 # Minimum time for a test has to run, in milliseconds, to record a sample
-min_run_time_ms = 100
+min_run_time_ms = 1000
 
 # Maximum time for a test to run
-max_run_time_ms = 2000
+max_run_time_ms = 20000
