@@ -120,6 +120,12 @@ fn main() {
                 .takes_value(true)
                 .help("Path to the public key to verify the source code signature")
         )
+        .arg(
+            Arg::with_name("spectre_mitigation_sandbox_cores")
+                .long("--spectre-mitigation-sandbox-cores")
+                .takes_value(true)
+                .help("If spectre mitigations are enabled and core partitioning is enables, this controls the number of cores reserved for sandboxes"),
+        )
         .get_matches();
 
     let entrypoint = matches.value_of("entrypoint").unwrap();
@@ -188,6 +194,11 @@ fn main() {
 
     let verify = matches.is_present("verify");
     let pk_path = matches.value_of("pk_path").map(PathBuf::from);
+
+    let spectre_mitigation_sandbox_cores =
+        matches.value_of("spectre_mitigation_sandbox_cores").map(|t| t.parse::<usize>().unwrap());
+
+    cranelift_spectre::runtime::use_spectre_mitigation_core_partition(spectre_mitigation_sandbox_cores);
 
     let config = Config {
         lucet_module,
