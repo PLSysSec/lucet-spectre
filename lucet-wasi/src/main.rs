@@ -36,10 +36,6 @@ fn parse_humansized(desc: &str) -> Result<u64, Error> {
     }
 }
 
-extern "C" {
-    fn aslr_dl_enable();
-}
-
 fn main() {
     // No-ops, but makes sure the linker doesn't throw away parts
     // of the runtime:
@@ -133,7 +129,7 @@ fn main() {
         .arg(
             Arg::with_name("spectre_mitigation_aslr")
                 .long("--spectre-mitigation-aslr")
-                .takes_value(true)
+                .takes_value(false)
                 .help("Whether to use ASLR for wasm sandbox code pages."),
         )
         .get_matches();
@@ -210,7 +206,7 @@ fn main() {
 
     let spectre_mitigation_aslr = matches.is_present("spectre_mitigation_aslr");
     if spectre_mitigation_aslr {
-        unsafe { aslr_dl_enable(); }
+        DlModule::aslr_dl_enable();
     }
 
     cranelift_spectre::runtime::use_spectre_mitigation_core_partition(spectre_mitigation_sandbox_cores);

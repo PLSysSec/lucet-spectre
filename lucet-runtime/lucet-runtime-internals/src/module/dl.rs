@@ -94,7 +94,20 @@ pub struct DlModule {
 unsafe impl Send for DlModule {}
 unsafe impl Sync for DlModule {}
 
+extern "C" {
+    fn aslr_dl_enable();
+    fn aslr_dl_disable();
+}
+
 impl DlModule {
+
+    pub fn aslr_dl_enable() {
+        unsafe { aslr_dl_enable(); }
+    }
+    pub fn aslr_dl_disable() {
+        unsafe { aslr_dl_disable(); }
+    }
+
     /// Create a module, loading code from a shared object on the filesystem.
     pub fn load<P: AsRef<Path>>(so_path: P) -> Result<Arc<Self>, Error> {
         Self::load_and_maybe_verify(so_path, None)
