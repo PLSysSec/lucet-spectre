@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::module::{AddrDetails, GlobalSpec, HeapSpec, Module, ModuleInternal, TableElement};
 use libc::c_void;
-use libloading::Library;
+use libloading_aslr::Library;
 use lucet_module::{
     FunctionHandle, FunctionIndex, FunctionPointer, FunctionSpec, ModuleData, ModuleFeatures,
     ModuleSignature, PublicKey, SerializedModule, Signature, LUCET_MODULE_SYM,
