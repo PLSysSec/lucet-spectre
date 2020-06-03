@@ -96,9 +96,10 @@ run:
 
 run_pht:
 	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass_pht
+	mkdir $(LUCET_ROOT)/../benchmarks/current_sightglass_pht
 
 	$(LUCET_ROOT)/target/release/sightglass -c pht.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/results-latest.csv
+	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/results-latest.csv
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/results-latest.csv
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht $(LUCET_ROOT)/../benchmarks/sightglass_pht_$(shell date --iso=seconds)
