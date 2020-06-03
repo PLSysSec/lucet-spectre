@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "lldb",
             "request": "launch",
@@ -112,6 +113,50 @@
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
                 "-o", "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_cet.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "test_pht_to_btb",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-pht-mitigation", "phttobtb",
+                "--pinned-heap-reg",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "/tmp/test_pht_btb.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "png_pht_to_btb",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-pht-mitigation", "phttobtb",
+                "--pinned-heap-reg",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
+                "-o", "/tmp/png_pht_btb.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"

@@ -141,6 +141,7 @@ arg_enum! {
     pub enum SpectrePHTMitigation {
         NONE,
         BLADE,
+        PHTTOBTB,
     }
 }
 
@@ -163,6 +164,7 @@ impl Into<cranelift_spectre::settings::SpectrePHTMitigation> for SpectrePHTMitig
         match self {
             SpectrePHTMitigation::NONE => cranelift_spectre::settings::SpectrePHTMitigation::NONE,
             SpectrePHTMitigation::BLADE => cranelift_spectre::settings::SpectrePHTMitigation::BLADE,
+            SpectrePHTMitigation::PHTTOBTB => cranelift_spectre::settings::SpectrePHTMitigation::PHTTOBTB,
         }
     }
 }
@@ -531,7 +533,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_pht_mitigation")
                     .long("--spectre-pht-mitigation")
                     .takes_value(true)
-                    .help("Internal flag for testing only. Override the pht protections automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade."),
+                    .help("Internal flag for testing only. Override the pht protections automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade, phttobtb."),
             )
             .arg(
                 Arg::with_name("keygen")
