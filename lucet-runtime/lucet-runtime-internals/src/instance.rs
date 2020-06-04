@@ -931,7 +931,7 @@ impl Instance {
     }
 
     /// Run a function in guest context at the given entrypoint.
-    fn run_func(&mut self, func: FunctionHandle, args: &[Val]) -> Result<RunResult, Error> {
+    pub fn run_func(&mut self, func: FunctionHandle, args: &[Val]) -> Result<RunResult, Error> {
         let needs_start = self.state.is_not_started() && !func.is_start_func;
         if needs_start {
             return Err(Error::InstanceNeedsStart);
@@ -1205,9 +1205,14 @@ impl Instance {
             // safety: `self` is not null if we are in this function
             *current_instance = Some(unsafe { NonNull::new_unchecked(self) });
         });
+
+        self.kill_state.set_entering();
     }
 
     pub fn clear_current_instance(&mut self) {
+
+        self.kill_state.set_exiting();
+
         CURRENT_INSTANCE.with(|current_instance| {
             *current_instance.borrow_mut() = None;
         });

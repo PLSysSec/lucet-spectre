@@ -489,6 +489,16 @@ impl KillState {
             *execution_domain = Domain::Terminated;
         }
     }
+
+    pub fn set_entering(&self) {
+        let mut execution_domain = self.execution_domain.lock().unwrap();
+        *execution_domain = Domain::Guest;
+    }
+
+    pub fn set_exiting(&self) {
+        let mut execution_domain = self.execution_domain.lock().unwrap();
+        *execution_domain = Domain::Pending;
+    }
 }
 
 /// Instance execution domains.
