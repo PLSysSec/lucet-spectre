@@ -1199,6 +1199,8 @@ impl Instance {
     }
 
     pub fn set_current_instance(&mut self) {
+        cranelift_spectre::runtime::use_spectre_mitigation_runtime_settings(self.module.get_spectre_protections());
+
         // there should never be another instance running on this thread when we enter this function
         CURRENT_INSTANCE.with(|current_instance| {
             let mut current_instance = current_instance.borrow_mut();
@@ -1207,9 +1209,13 @@ impl Instance {
         });
 
         self.kill_state.set_entering();
+
+        cranelift_spectre::runtime::perform_transition_protection_in();
     }
 
     pub fn clear_current_instance(&mut self) {
+
+        cranelift_spectre::runtime::perform_transition_protection_out();
 
         self.kill_state.set_exiting();
 
