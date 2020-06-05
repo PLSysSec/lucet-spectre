@@ -313,6 +313,8 @@ impl<'a> Compiler<'a> {
         let mut function_map: HashMap<FuncId, (u32, DataId, usize)> = HashMap::new();
 
         let indirect_functions = &self.decls.info.table_elems[&TableIndex::from_u32(0)];
+        // Reserving the first 16 values
+        let mut cfi_start_num: u64 = 16;
 
         for (ref func, (code, code_offset)) in self.decls.function_bodies() {
             let mut func_info = FuncInfo::new(&self.decls, self.count_instructions);
@@ -365,6 +367,7 @@ impl<'a> Compiler<'a> {
                     &mut clif_context,
                     &mut traps,
                     can_be_indirectly_called,
+                    &mut cfi_start_num,
                 )
                 .unwrap_or_else(|source| {
                     panic!("ERRRRRRRRRRR : {}  {:?} ", func.name.symbol().to_string(), source);
