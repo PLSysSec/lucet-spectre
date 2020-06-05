@@ -222,6 +222,23 @@ impl<'a> Compiler<'a> {
             pinned_heap,
         )?;
 
+        assert!(16 == isa.register_info().parse_regunit("rax").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(17 == isa.register_info().parse_regunit("rcx").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(18 == isa.register_info().parse_regunit("rdx").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(19 == isa.register_info().parse_regunit("rbx").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(20 == isa.register_info().parse_regunit("rsp").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(21 == isa.register_info().parse_regunit("rbp").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(22 == isa.register_info().parse_regunit("rsi").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(23 == isa.register_info().parse_regunit("rdi").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(24 == isa.register_info().parse_regunit("r8").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(25 == isa.register_info().parse_regunit("r9").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(26 == isa.register_info().parse_regunit("r10").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(27 == isa.register_info().parse_regunit("r11").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(28 == isa.register_info().parse_regunit("r12").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(29 == isa.register_info().parse_regunit("r13").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(30 == isa.register_info().parse_regunit("r14").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+        assert!(31 == isa.register_info().parse_regunit("r15").unwrap(), "Fix cranelift_spectre::inst.rs for reg to int assignments");
+
         let frontend_config = isa.frontend_config();
         let mut module_info = ModuleInfo::new(frontend_config.clone());
 
