@@ -142,6 +142,7 @@ arg_enum! {
         NONE,
         BLADE,
         PHTTOBTB,
+        CFI,
     }
 }
 
@@ -164,7 +165,10 @@ impl Into<cranelift_spectre::settings::SpectrePHTMitigation> for SpectrePHTMitig
         match self {
             SpectrePHTMitigation::NONE => cranelift_spectre::settings::SpectrePHTMitigation::NONE,
             SpectrePHTMitigation::BLADE => cranelift_spectre::settings::SpectrePHTMitigation::BLADE,
-            SpectrePHTMitigation::PHTTOBTB => cranelift_spectre::settings::SpectrePHTMitigation::PHTTOBTB,
+            SpectrePHTMitigation::PHTTOBTB => {
+                cranelift_spectre::settings::SpectrePHTMitigation::PHTTOBTB
+            }
+            SpectrePHTMitigation::CFI => cranelift_spectre::settings::SpectrePHTMitigation::CFI,
         }
     }
 }
@@ -289,10 +293,9 @@ impl Options {
         let sk_path = m.value_of("sk_path").map(PathBuf::from);
         let pk_path = m.value_of("pk_path").map(PathBuf::from);
         let count_instructions = m.is_present("count_instructions");
-        let pinned_heap =
-            spectre_mitigation == Some(SpectreMitigation::SFI) ||
-            spectre_mitigation == Some(SpectreMitigation::CET) ||
-            m.is_present("pinned_heap");
+        let pinned_heap = spectre_mitigation == Some(SpectreMitigation::SFI)
+            || spectre_mitigation == Some(SpectreMitigation::CET)
+            || m.is_present("pinned_heap");
 
         let error_style = match m.value_of("error_style") {
             None => ErrorStyle::default(),

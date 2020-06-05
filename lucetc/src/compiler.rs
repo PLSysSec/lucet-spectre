@@ -366,13 +366,13 @@ impl<'a> Compiler<'a> {
                     &mut traps,
                     can_be_indirectly_called,
                 )
-                // .unwrap_or_else(|source| {
-                //     panic!("ERRRRRRRRRRR : {}  {:?} ", func.name.symbol().to_string(), source);
-                // });
-                .map_err(|source| Error::FunctionDefinition {
-                    symbol: func.name.symbol().to_string(),
-                    source,
-                })?;
+                .unwrap_or_else(|source| {
+                    panic!("ERRRRRRRRRRR : {}  {:?} ", func.name.symbol().to_string(), source);
+                });
+                // .map_err(|source| Error::FunctionDefinition {
+                //     symbol: func.name.symbol().to_string(),
+                //     source,
+                // })?;
 
             let size = compiled.size;
 
