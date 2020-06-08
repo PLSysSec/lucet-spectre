@@ -485,6 +485,9 @@ impl Context {
         // This value will be used only when the lucet module loaded is compiled requiring use of the pinned heap register.
         child.gpr.r15 = heap as u64;
 
+        // spectre cfi
+        child.gpr.r14 = cranelift_spectre::runtime::CFI_START_FUNC_LABEL;
+
         Ok(())
     }
 
