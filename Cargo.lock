@@ -330,6 +330,7 @@ dependencies = [
  "anyhow",
  "cranelift-codegen",
  "cranelift-entity",
+ "cranelift-spectre",
  "log",
  "thiserror",
 ]
