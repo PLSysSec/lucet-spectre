@@ -39,6 +39,7 @@ SFI_SBXONLY_FLAGS:=--spectre-mitigation=sfi --spectre-only-sandbox-isolation --s
 CET_SBXONLY_FLAGS:=--spectre-mitigation=cet --spectre-only-sandbox-isolation --spectre-disable-core-switching
 BLADE_FLAGS:=--spectre-pht-mitigation=blade
 PHTTOBTB_FLAGS:=--spectre-pht-mitigation=phttobtb
+CFI_FLAGS:=--spectre-pht-mitigation=cfi
 
 
 SHOOTOUT_NATIVE_CFLAGS:=-march=native -fPIC \
@@ -135,6 +136,9 @@ build: build/blade/module.so
 
 build: build/phttobtb/implementation.so
 build: build/phttobtb/module.so
+
+build: build/cfi/implementation.so
+build: build/cfi/module.so
 
 build: $(LUCET_ROOT)/target/release/sightglass
 
@@ -248,6 +252,14 @@ build/phttobtb/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/phttobtb/module.so) \
 		-c $^ -o $@
+build/cfi/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/cfi/module.so) \
+		-c $^ -o $@
 
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/lucet/implementation.so: build/lucet/wrapper.o
@@ -339,6 +351,16 @@ build/phttobtb/implementation.so: build/phttobtb/hostcalls.o
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
+build/cfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/cfi/implementation.so: build/cfi/wrapper.o
+build/cfi/implementation.so: build/cfi/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared \
+		build/cfi/wrapper.o build/cfi/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
 build/loadlfence/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
@@ -401,6 +423,14 @@ build/phttobtb/module.so: build/lucet/module.wasm
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		$(PHTTOBTB_FLAGS) \
+		$< -o $@
+
+build/cfi/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CFI_FLAGS) \
 		$< -o $@
 
 $(LUCETC) $(LUCET_ROOT)/target/release/liblucet_unified.a $(LUCET_ROOT)/target/release/sightglass:

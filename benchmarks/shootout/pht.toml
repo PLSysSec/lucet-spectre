@@ -3,6 +3,7 @@ test_suites = [
   { name = "1.Stock", library_path = "./build/lucet/implementation.so" },
   { name = "2.Blade", library_path = "./build/blade/implementation.so" },
   { name = "3.PhtToBtb", library_path = "./build/phttobtb/implementation.so" },
+  { name = "4.CFI", library_path = "./build/cfi/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)

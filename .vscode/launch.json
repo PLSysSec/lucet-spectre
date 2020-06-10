@@ -208,5 +208,27 @@
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "sightglass_cfi",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-pht-mitigation", "cfi",
+                "--pinned-heap-reg",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/benchmarks/shootout/build/lucet/module.wasm",
+                "-o", "/tmp/sightglass_cfi.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
     ]
 }
