@@ -30,7 +30,7 @@ endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
-WASI_CFLAGS=-funroll-loops -mllvm --unroll-runtime
+UNROLL_FLAGS=-funroll-loops -mllvm --unroll-runtime
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
@@ -114,6 +114,9 @@ build: build/native/implementation.so
 build: build/lucet/implementation.so
 build: build/lucet/module.so
 
+build: build/lucet_unroll/implementation.so
+build: build/lucet_unroll/module.so
+
 build: build/loadlfence/implementation.so
 build: build/loadlfence/module.so
 
@@ -141,6 +144,15 @@ build: build/phttobtb/module.so
 build: build/cfi/implementation.so
 build: build/cfi/module.so
 
+build: build/blade_unroll/implementation.so
+build: build/blade_unroll/module.so
+
+build: build/phttobtb_unroll/implementation.so
+build: build/phttobtb_unroll/module.so
+
+build: build/cfi_unroll/implementation.so
+build: build/cfi_unroll/module.so
+
 build: $(LUCET_ROOT)/target/release/sightglass
 
 # With the xenial gcc (5.4.0) this pins the CPU for minutes if above -O1, so its getting downgraded to -O1
@@ -158,7 +170,7 @@ build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/sh
 
 build/lucet/shootout/%.o: $(SHOOTOUT)/%.c
 	@mkdir -p $(@D)
-	$(WASI_CC) $(COMMON_CFLAGS) $(WASI_CFLAGS) -c $^ -o $@
+	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
 
 build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
 	@mkdir -p $(@D)
@@ -167,13 +179,6 @@ build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/luce
 build/lucet/module.wasm: build/lucet/module.wasm.unoptimized
 	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
 
-build/lucet/module.so: build/lucet/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$< -o $@
-
 build/lucet/module.clif: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
@@ -181,7 +186,33 @@ build/lucet/module.clif: build/lucet/module.wasm
 		--bindings=$(LUCET_WASI)/bindings.json \
 		$< -o $@
 
+build/lucet_unroll/shootout/%.o: $(SHOOTOUT)/%.c
+	@mkdir -p $(@D)
+	$(WASI_CC) $(COMMON_CFLAGS) $(UNROLL_FLAGS) -c $^ -o $@
+
+build/lucet_unroll/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet_unroll/shootout/, $(notdir $(SHOOTOUT_SRCS))))
+	@mkdir -p $(@D)
+	$(WASI_CC) $^ -o $@ -nostartfiles -Wl,--no-entry -Wl,--export-all
+
+build/lucet_unroll/module.wasm: build/lucet_unroll/module.wasm.unoptimized
+	$(WASM_OPT) -mvp --disable-mutable-globals -O4 -o $@ $^
+
+build/lucet_unroll/module.clif: build/lucet_unroll/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=clif \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$< -o $@
+
 build/lucet/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/lucet/module.so) \
+		-c $^ -o $@
+build/lucet_unroll/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
 		-fvisibility=default \
@@ -261,6 +292,30 @@ build/cfi/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/cfi/module.so) \
 		-c $^ -o $@
+build/blade_unroll/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/blade_unroll/module.so) \
+		-c $^ -o $@
+build/phttobtb_unroll/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/phttobtb_unroll/module.so) \
+		-c $^ -o $@
+build/cfi_unroll/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/cfi_unroll/module.so) \
+		-c $^ -o $@
 
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
 build/lucet/implementation.so: build/lucet/wrapper.o
@@ -268,6 +323,16 @@ build/lucet/implementation.so: build/lucet/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared \
 		build/lucet/wrapper.o build/lucet/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
+build/lucet_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/lucet_unroll/implementation.so: build/lucet_unroll/wrapper.o
+build/lucet_unroll/implementation.so: build/lucet_unroll/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared \
+		build/lucet_unroll/wrapper.o build/lucet_unroll/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
@@ -362,7 +427,51 @@ build/cfi/implementation.so: build/cfi/hostcalls.o
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/loadlfence/module.so: build/lucet/module.wasm
+build/blade_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/blade_unroll/implementation.so: build/blade_unroll/wrapper.o
+build/blade_unroll/implementation.so: build/blade_unroll/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared \
+		build/blade_unroll/wrapper.o build/blade_unroll/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
+build/phttobtb_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/phttobtb_unroll/implementation.so: build/phttobtb_unroll/wrapper.o
+build/phttobtb_unroll/implementation.so: build/phttobtb_unroll/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared \
+		build/phttobtb_unroll/wrapper.o build/phttobtb_unroll/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
+build/cfi_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/cfi_unroll/implementation.so: build/cfi_unroll/wrapper.o
+build/cfi_unroll/implementation.so: build/cfi_unroll/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared \
+		build/cfi_unroll/wrapper.o build/cfi_unroll/hostcalls.o \
+		-L $(LUCET_ROOT)/target/release \
+		-Wl,-rpath $(LUCET_ROOT)/target/release \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
+build/lucet/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$< -o $@
+
+build/lucet_unroll/module.so: build/lucet_unroll/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$< -o $@
+
+build/loadlfence/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
@@ -427,6 +536,30 @@ build/phttobtb/module.so: build/lucet/module.wasm
 		$< -o $@
 
 build/cfi/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CFI_FLAGS) \
+		$< -o $@
+
+build/blade_unroll/module.so: build/lucet_unroll/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(BLADE_FLAGS) \
+		$< -o $@
+
+build/phttobtb_unroll/module.so: build/lucet_unroll/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(PHTTOBTB_FLAGS) \
+		$< -o $@
+
+build/cfi_unroll/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
