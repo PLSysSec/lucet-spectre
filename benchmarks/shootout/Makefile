@@ -30,6 +30,7 @@ endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
+WASI_CFLAGS=-funroll-loops -mllvm --unroll-runtime
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
@@ -157,7 +158,7 @@ build/native/implementation.so: $(patsubst %.c, %.o, $(addprefix build/native/sh
 
 build/lucet/shootout/%.o: $(SHOOTOUT)/%.c
 	@mkdir -p $(@D)
-	$(WASI_CC) $(COMMON_CFLAGS) -c $^ -o $@
+	$(WASI_CC) $(COMMON_CFLAGS) $(WASI_CFLAGS) -c $^ -o $@
 
 build/lucet/module.wasm.unoptimized: $(patsubst %.c, %.o, $(addprefix build/lucet/shootout/, $(notdir $(SHOOTOUT_SRCS))))
 	@mkdir -p $(@D)
