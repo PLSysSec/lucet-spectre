@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::module::{AddrDetails, GlobalSpec, HeapSpec, Module, ModuleInternal, TableElement};
+use cranelift_spectre::settings::{SpectreMitigation, SpectrePHTMitigation, SpectreSettings};
 use libc::c_void;
 use libloading_aslr::Library;
 use lucet_module::{
@@ -13,6 +14,7 @@ use std::path::Path;
 use std::slice;
 use std::slice::from_raw_parts;
 use std::sync::Arc;
+
 
 use raw_cpuid::CpuId;
 
@@ -94,41 +96,41 @@ pub struct DlModule {
 unsafe impl Send for DlModule {}
 unsafe impl Sync for DlModule {}
 
-extern "C" {
-    fn aslr_dl_enable();
-    fn aslr_dl_disable();
-}
-
 impl DlModule {
-
-    pub fn aslr_dl_enable() {
-        unsafe { aslr_dl_enable(); }
-    }
-    pub fn aslr_dl_disable() {
-        unsafe { aslr_dl_disable(); }
-    }
 
     /// Create a module, loading code from a shared object on the filesystem.
     pub fn load<P: AsRef<Path>>(so_path: P) -> Result<Arc<Self>, Error> {
-        Self::load_and_maybe_verify(so_path, None)
+        Self::load_and_maybe_verify(so_path, None, false)
+    }
+
+    /// Create a module, loading code from a shared object on the filesystem.
+    pub fn load_aslr<P: AsRef<Path>>(so_path: P, aslr_enabled: bool) -> Result<Arc<Self>, Error> {
+        Self::load_and_maybe_verify(so_path, None, aslr_enabled)
     }
 
     /// Create a module, loading code from a shared object on the filesystem
     /// and verifying it using a public key if one has been supplied.
     pub fn load_and_verify<P: AsRef<Path>>(so_path: P, pk: PublicKey) -> Result<Arc<Self>, Error> {
-        Self::load_and_maybe_verify(so_path, Some(pk))
+        Self::load_and_maybe_verify(so_path, Some(pk), false)
+    }
+
+    /// Create a module, loading code from a shared object on the filesystem
+    /// and verifying it using a public key if one has been supplied.
+    pub fn load_and_verify_aslr<P: AsRef<Path>>(so_path: P, pk: PublicKey, aslr_enabled: bool) -> Result<Arc<Self>, Error> {
+        Self::load_and_maybe_verify(so_path, Some(pk), aslr_enabled)
     }
 
     fn load_and_maybe_verify<P: AsRef<Path>>(
         so_path: P,
         pk: Option<PublicKey>,
+        aslr_enabled: bool,
     ) -> Result<Arc<Self>, Error> {
         // Load the dynamic library. The undefined symbols corresponding to the lucet_syscall_
         // functions will be provided by the current executable.  We trust our wasm->dylib compiler
         // to make sure these function calls are the way the dylib can touch memory outside of its
         // stack and heap.
         // let abs_so_path = so_path.as_ref().canonicalize().map_err(Error::DlError)?;
-        let lib = Library::new(so_path.as_ref().as_os_str()).map_err(Error::DlError)?;
+        let lib = Library::new(so_path.as_ref().as_os_str(), aslr_enabled).map_err(Error::DlError)?;
 
         let serialized_module_ptr = unsafe {
             lib.get::<*const SerializedModule>(LUCET_MODULE_SYM.as_bytes())
@@ -172,21 +174,22 @@ impl DlModule {
         let module_data = ModuleData::deserialize(module_data_slice)?;
         let features = module_data.features();
 
-        let spectre_mitigation =
-            Some(FromPrimitive::from_u16(features.spectre_mitigation_scheme).unwrap());
-        let spectre_only_sandbox_isolation = features.spectre_only_sandbox_isolation;
-        let spectre_no_cross_sbx_attacks = features.spectre_no_cross_sbx_attacks;
-        let spectre_pht_mitigation = cranelift_spectre::settings::get_default_pht_protection(
-            spectre_mitigation,
-            spectre_only_sandbox_isolation,
-            spectre_no_cross_sbx_attacks,
-        );
-        let spectre_settings = cranelift_spectre::settings::SpectreSettings {
-            spectre_mitigation: spectre_mitigation.unwrap(),
-            spectre_pht_mitigation: spectre_pht_mitigation.unwrap(),
-            spectre_only_sandbox_isolation,
-            spectre_no_cross_sbx_attacks,
-            spectre_disable_core_switching: features.spectre_disable_core_switching,
+        let spectre_mitigation: SpectreMitigation = FromPrimitive::from_u16(features.spectre_mitigation).unwrap();
+        let spectre_pht_mitigation: SpectrePHTMitigation = FromPrimitive::from_u16(features.spectre_pht_mitigation).unwrap();
+
+        let module_requires_aslr = spectre_mitigation == SpectreMitigation::SFIASLR;
+        if module_requires_aslr != aslr_enabled {
+            panic!("Module's expected ASLR to be {}, but it was {}",
+                if module_requires_aslr {"enabled"} else {"disabled"},
+                if aslr_enabled {"enabled"} else {"disabled"});
+        }
+
+        let spectre_settings = SpectreSettings {
+            spectre_mitigation: spectre_mitigation,
+            spectre_stop_sbx_breakout: features.spectre_stop_sbx_breakout,
+            spectre_stop_sbx_poisoning: features.spectre_stop_sbx_poisoning,
+            spectre_stop_host_poisoning: features.spectre_stop_host_poisoning,
+            spectre_pht_mitigation: spectre_pht_mitigation,
             spectre_disable_btbflush: features.spectre_disable_btbflush,
         };
 

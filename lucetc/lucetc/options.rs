@@ -133,6 +133,7 @@ arg_enum! {
         STRAWMAN,
         SFI,
         CET,
+        SFIASLR,
     }
 }
 
@@ -142,7 +143,7 @@ arg_enum! {
         NONE,
         BLADE,
         PHTTOBTB,
-        CFI,
+        INTERLOCK,
     }
 }
 
@@ -156,6 +157,7 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
             SpectreMitigation::STRAWMAN => cranelift_spectre::settings::SpectreMitigation::STRAWMAN,
             SpectreMitigation::SFI => cranelift_spectre::settings::SpectreMitigation::SFI,
             SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
+            SpectreMitigation::SFIASLR => cranelift_spectre::settings::SpectreMitigation::SFIASLR,
         }
     }
 }
@@ -168,7 +170,7 @@ impl Into<cranelift_spectre::settings::SpectrePHTMitigation> for SpectrePHTMitig
             SpectrePHTMitigation::PHTTOBTB => {
                 cranelift_spectre::settings::SpectrePHTMitigation::PHTTOBTB
             }
-            SpectrePHTMitigation::CFI => cranelift_spectre::settings::SpectrePHTMitigation::CFI,
+            SpectrePHTMitigation::INTERLOCK => cranelift_spectre::settings::SpectrePHTMitigation::INTERLOCK,
         }
     }
 }
@@ -245,28 +247,42 @@ impl Options {
             .value_of("spectre_pht_mitigation")
             .map(|m| m.parse::<SpectrePHTMitigation>().unwrap());
 
-        let spectre_only_sandbox_isolation = m.is_present("spectre_only_sandbox_isolation");
-        let spectre_no_cross_sbx_attacks = m.is_present("spectre_no_cross_sbx_attacks");
-        let spectre_disable_core_switching = m.is_present("spectre_disable_core_switching");
-        let spectre_disable_btbflush = m.is_present("spectre_disable_btbflush");
+        let spectre_mitigation_converted = spectre_mitigation.clone().unwrap_or(SpectreMitigation::NONE).into();
+        let mut spectre_stop_sbx_breakout = m.is_present("spectre_stop_sbx_breakout");
+        let mut spectre_stop_sbx_poisoning = m.is_present("spectre_stop_sbx_poisoning");
+        let mut spectre_stop_host_poisoning = m.is_present("spectre_stop_host_poisoning");
 
-        let spectre_mitigation_converted = spectre_mitigation.clone().map(|m| m.into());
+        if spectre_mitigation_converted == SpectreMitigation::SFI.into() || spectre_mitigation_converted == SpectreMitigation::CET.into() {
+            if !spectre_stop_sbx_breakout && !spectre_stop_sbx_poisoning && !spectre_stop_host_poisoning {
+                // By default we enable everything
+                spectre_stop_sbx_breakout = true;
+                spectre_stop_sbx_poisoning = true;
+                spectre_stop_host_poisoning = true;
+            }
+        } else {
+            if spectre_stop_sbx_breakout || spectre_stop_sbx_poisoning || spectre_stop_host_poisoning {
+                panic!("Can only use modular protections of --spectre-stop-sbx-breakout --spectre-stop-sbx-poisoning --spectre-stop-host-poisoning when using sfi or cet schemes");
+            }
+        }
+
         let spectre_pht_mitigation_converted = if spectre_pht_mitigation.is_some() {
-            spectre_pht_mitigation.clone().map(|m| m.into())
+            spectre_pht_mitigation.unwrap().clone().into()
         } else {
             cranelift_spectre::settings::get_default_pht_protection(
                 spectre_mitigation_converted,
-                spectre_only_sandbox_isolation,
-                spectre_no_cross_sbx_attacks,
+                spectre_stop_sbx_breakout,
+                spectre_stop_sbx_poisoning,
+                spectre_stop_host_poisoning,
             )
         };
+        let spectre_disable_btbflush = m.is_present("spectre_disable_btbflush");
 
         cranelift_spectre::settings::use_spectre_mitigation_settings(
             spectre_mitigation_converted,
+            spectre_stop_sbx_breakout,
+            spectre_stop_sbx_poisoning,
+            spectre_stop_host_poisoning,
             spectre_pht_mitigation_converted,
-            spectre_only_sandbox_isolation,
-            spectre_no_cross_sbx_attacks,
-            spectre_disable_core_switching,
             spectre_disable_btbflush,
         );
 
@@ -293,9 +309,8 @@ impl Options {
         let sk_path = m.value_of("sk_path").map(PathBuf::from);
         let pk_path = m.value_of("pk_path").map(PathBuf::from);
         let count_instructions = m.is_present("count_instructions");
-        let pinned_heap = spectre_mitigation == Some(SpectreMitigation::SFI)
-            || spectre_mitigation == Some(SpectreMitigation::CET)
-            || spectre_pht_mitigation == Some(SpectrePHTMitigation::CFI)
+        let pinned_heap = cranelift_spectre::settings::get_use_linear_block(spectre_mitigation_converted)
+            || spectre_pht_mitigation == Some(SpectrePHTMitigation::INTERLOCK)
             || m.is_present("pinned_heap");
 
         let error_style = match m.value_of("error_style") {
@@ -507,25 +522,25 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman, sfi, cet."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman (lfence at all control flow targets), sfi, cet, sfiaslr (probablistic scheme relying on ASLR)."),
             )
             .arg(
-                Arg::with_name("spectre_only_sandbox_isolation")
-                    .long("--spectre-only-sandbox-isolation")
+                Arg::with_name("spectre_stop_sbx_breakout")
+                    .long("--spectre-stop-sbx-breakout")
                     .takes_value(false)
-                    .help("Only enable spectre mitigations for sandbox isolation. Disables sandbox to app and cross sandbox confused deputy protections")
+                    .help("Enable spectre mitigations for sandbox breakout attacks.")
             )
             .arg(
-                Arg::with_name("spectre_no_cross_sbx_attacks")
-                    .long("--spectre-no-cross-sbx-attacks")
+                Arg::with_name("spectre_stop_sbx_poisoning")
+                    .long("--spectre-stop-sbx-poisoning")
                     .takes_value(false)
-                    .help("Only enable spectre mitigations for sandbox isolation and sandbox to app protection. Disables cross sandbox confused deputy protections")
+                    .help("Enable spectre mitigations to prevent cross sandbox poisoning attacks")
             )
             .arg(
-                Arg::with_name("spectre_disable_core_switching")
-                    .long("--spectre-disable-core-switching")
+                Arg::with_name("spectre_stop_host_poisoning")
+                    .long("--spectre-stop-host-poisoning")
                     .takes_value(false)
-                    .help("Internal flag for testing only. Disable core switching even if needed on spectre mitigations")
+                    .help("Enable spectre mitigations to prevent host poisoning attacks")
             )
             .arg(
                 Arg::with_name("spectre_disable_btbflush")
@@ -537,7 +552,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_pht_mitigation")
                     .long("--spectre-pht-mitigation")
                     .takes_value(true)
-                    .help("Internal flag for testing only. Override the pht protections automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade, phttobtb."),
+                    .help("Internal flag for testing only. Override the pht protections automatically enabled by --spectre-mitigation and --spectre-only-sandbox-isolation if needed. What scheme to use to protect pht from confused deputy spectre attacks: none, blade, phttobtb, cfi."),
             )
             .arg(
                 Arg::with_name("keygen")

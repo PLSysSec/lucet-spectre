@@ -22,6 +22,7 @@ struct Config<'a> {
     timeout: Option<Duration>,
     verify: bool,
     pk_path: Option<PathBuf>,
+    spectre_mitigation_aslr: bool,
 }
 
 fn parse_humansized(desc: &str) -> Result<u64, Error> {
@@ -121,12 +122,6 @@ fn main() {
                 .help("Path to the public key to verify the source code signature")
         )
         .arg(
-            Arg::with_name("spectre_mitigation_sandbox_cores")
-                .long("--spectre-mitigation-sandbox-cores")
-                .takes_value(true)
-                .help("If spectre mitigations are enabled and core partitioning is enables, this controls the number of cores reserved for sandboxes"),
-        )
-        .arg(
             Arg::with_name("spectre_mitigation_aslr")
                 .long("--spectre-mitigation-aslr")
                 .takes_value(false)
@@ -201,15 +196,7 @@ fn main() {
     let verify = matches.is_present("verify");
     let pk_path = matches.value_of("pk_path").map(PathBuf::from);
 
-    let spectre_mitigation_sandbox_cores =
-    matches.value_of("spectre_mitigation_sandbox_cores").map(|t| t.parse::<usize>().unwrap());
-
     let spectre_mitigation_aslr = matches.is_present("spectre_mitigation_aslr");
-    if spectre_mitigation_aslr {
-        DlModule::aslr_dl_enable();
-    }
-
-    cranelift_spectre::runtime::use_spectre_mitigation_core_partition(spectre_mitigation_sandbox_cores);
 
     let config = Config {
         lucet_module,
@@ -220,6 +207,7 @@ fn main() {
         timeout,
         verify,
         pk_path,
+        spectre_mitigation_aslr,
     };
 
     run(config)
@@ -236,10 +224,10 @@ fn run(config: Config<'_>) {
             (true, None) => panic!("signature verification requires a public key"),
         };
         let module = if let Some(pk) = pk {
-            DlModule::load_and_verify(&config.lucet_module, pk)
+            DlModule::load_and_verify_aslr(&config.lucet_module, pk, config.spectre_mitigation_aslr)
                 .expect("signed module can be loaded")
         } else {
-            DlModule::load(&config.lucet_module).expect("module can be loaded")
+            DlModule::load_aslr(&config.lucet_module, config.spectre_mitigation_aslr).expect("module can be loaded")
         };
         let min_globals_size = module.initial_globals_size();
         let globals_size = ((min_globals_size + 4096 - 1) / 4096) * 4096;

@@ -33,14 +33,13 @@
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigation", "sfi",
-                "--spectre-disable-core-switching",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
-                "-o", "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test_spectre_sfi.o",
+                "-o", "/tmp/test_spectre_sfi.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -61,7 +60,7 @@
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre_sfi.o",
+                "-o", "/tmp/pngtest_spectre_sfi.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -167,10 +166,10 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "png_cfi",
+            "name": "png_interlock",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--spectre-pht-mitigation", "cfi",
+                "--spectre-pht-mitigation", "interlock",
                 "--pinned-heap-reg",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
@@ -178,7 +177,7 @@
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "/tmp/png_cfi.o",
+                "-o", "/tmp/png_interlock.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -189,10 +188,10 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "test_cfi",
+            "name": "test_interlock",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--spectre-pht-mitigation", "cfi",
+                "--spectre-pht-mitigation", "interlock",
                 "--pinned-heap-reg",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
@@ -200,7 +199,7 @@
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
-                "-o", "/tmp/test_cfi.o",
+                "-o", "/tmp/test_interlock.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -211,10 +210,10 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "sightglass_cfi",
+            "name": "sightglass_interlock",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--spectre-pht-mitigation", "cfi",
+                "--spectre-pht-mitigation", "interlock",
                 "--pinned-heap-reg",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
@@ -222,7 +221,7 @@
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
                 "${workspaceFolder}/benchmarks/shootout/build/lucet/module.wasm",
-                "-o", "/tmp/sightglass_cfi.o",
+                "-o", "/tmp/sightglass_interlock.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"

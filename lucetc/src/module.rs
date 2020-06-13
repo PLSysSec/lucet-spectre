@@ -353,7 +353,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleInfo<'a> {
         let mut elements_vec: Vec<FuncIndex> = elements.into();
 
         let mitigation = cranelift_spectre::settings::get_spectre_mitigation();
-        if mitigation == cranelift_spectre::settings::SpectreMitigation::SFI {
+        if cranelift_spectre::settings::get_use_linear_block(mitigation) {
             let next_power_of_two_minus_1 = |val: usize| -> usize {
                 let next_power_of_two = val.next_power_of_two();
                 let common = next_power_of_two - 1;

@@ -30,7 +30,7 @@ endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
-UNROLL_FLAGS=-funroll-loops -mllvm --unroll-runtime
+UNROLL_FLAGS=-funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 
 LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
 STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
@@ -471,7 +471,7 @@ build/lucet_unroll/module.so: build/lucet_unroll/module.wasm
 		--bindings=$(LUCET_WASI)/bindings.json \
 		$< -o $@
 
-build/loadlfence/module.so: build/lucet_unroll/module.wasm
+build/loadlfence/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \

@@ -1,5 +1,6 @@
 use crate::error::Error;
 use cranelift_codegen::{isa, settings::Configurable};
+use cranelift_spectre::settings::*;
 use lucet_module::ModuleFeatures;
 use std::collections::{HashMap, HashSet};
 use target_lexicon::Triple;
@@ -80,14 +81,12 @@ fn detect_features(features: &mut ModuleFeatures) {
         features.popcnt = info.has_popcnt();
     }
 
-    features.spectre_mitigation_scheme =
-        cranelift_spectre::settings::get_spectre_mitigation() as u16;
-    features.spectre_only_sandbox_isolation =
-        cranelift_spectre::settings::get_spectre_only_sandbox_isolation();
-    features.spectre_no_cross_sbx_attacks =
-        cranelift_spectre::settings::get_spectre_no_cross_sbx_attacks();
-    features.spectre_disable_core_switching = cranelift_spectre::settings::get_spectre_disable_core_switching();
-    features.spectre_disable_btbflush = cranelift_spectre::settings::get_spectre_disable_btbflush();
+    features.spectre_mitigation = get_spectre_mitigation() as u16;
+    features.spectre_stop_sbx_breakout = get_spectre_stop_sbx_breakout();
+    features.spectre_stop_sbx_poisoning = get_spectre_stop_sbx_poisoning();
+    features.spectre_stop_host_poisoning = get_spectre_stop_host_poisoning();
+    features.spectre_pht_mitigation = get_spectre_pht_mitigation() as u16;
+    features.spectre_disable_btbflush = get_spectre_disable_btbflush();
 
     if let Some(info) = cpuid.get_extended_feature_info() {
         features.bmi1 = info.has_bmi1();
