@@ -29,15 +29,14 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "test_sfi",
+            "name": "test_sfi_host",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--spectre-mitigation", "sfi",
+                "--spectre-mitigation", "sfi", "--spectre-stop-host-poisoning",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
-                "--emit", "obj",
                 "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
                 "-o", "/tmp/test_spectre_sfi.o",
             ],

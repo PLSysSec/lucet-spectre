@@ -190,7 +190,7 @@ impl CompilerBuilder {
 
 pub struct Compiler<'a> {
     decls: ModuleDecls<'a>,
-    clif_module: ClifModule<ObjectBackend>,
+    pub clif_module: ClifModule<ObjectBackend>,
     target: Triple,
     opt_level: OptLevel,
     cpu_features: CpuFeatures,
@@ -387,7 +387,9 @@ impl<'a> Compiler<'a> {
                     &mut cfi_start_num,
                 )
                 .unwrap_or_else(|source| {
-                    panic!("ERRRRRRRRRRR : {}  {:?} ", func.name.symbol().to_string(), source);
+                    panic!("ERRRRRRRRRRR : {}  {:?}\n{}", func.name.symbol().to_string(), source,
+                        clif_context.func.display(self.clif_module.backend.isa())
+                    );
                 });
                 // .map_err(|source| Error::FunctionDefinition {
                 //     symbol: func.name.symbol().to_string(),
