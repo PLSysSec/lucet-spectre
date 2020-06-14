@@ -177,7 +177,7 @@ impl DlModule {
         let spectre_mitigation: SpectreMitigation = FromPrimitive::from_u16(features.spectre_mitigation).unwrap();
         let spectre_pht_mitigation: SpectrePHTMitigation = FromPrimitive::from_u16(features.spectre_pht_mitigation).unwrap();
 
-        let module_requires_aslr = spectre_mitigation == SpectreMitigation::SFIASLR;
+        let module_requires_aslr = spectre_mitigation == SpectreMitigation::SFIASLR || spectre_mitigation == SpectreMitigation::CETASLR;
         if module_requires_aslr != aslr_enabled {
             panic!("Module's expected ASLR to be {}, but it was {}",
                 if module_requires_aslr {"enabled"} else {"disabled"},

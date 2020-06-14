@@ -25,6 +25,7 @@ pub use crate::{
     heap::HeapSettings,
     load::read_module,
 };
+use cranelift_spectre::settings::{get_spectre_mitigation, SpectreMitigation};
 pub use lucet_module::bindings::Bindings;
 pub use lucet_validate::Validator;
 use signature::{PublicKey, SecretKey};
@@ -419,9 +420,8 @@ flags for generating shared libraries.",
     }
     .into();
 
-    if cranelift_spectre::settings::get_spectre_mitigation()
-        == cranelift_spectre::settings::SpectreMitigation::CET
-    {
+    let mitigation = get_spectre_mitigation();
+    if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR {
         ret = ret + " -z ibt -z shstk";
     }
 

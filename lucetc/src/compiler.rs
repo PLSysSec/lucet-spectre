@@ -24,6 +24,7 @@ use cranelift_module::{
     Linkage as ClifLinkage, Module as ClifModule,
 };
 use cranelift_object::{ObjectBackend, ObjectBuilder};
+use cranelift_spectre::settings::{get_spectre_mitigation, SpectreMitigation};
 use cranelift_wasm::{
     translate_module, FuncTranslator, ModuleTranslationState, TableIndex, WasmError,
 };
@@ -354,9 +355,9 @@ impl<'a> Compiler<'a> {
 
             let mut can_be_indirectly_called = false;
 
-            let mitigation = cranelift_spectre::settings::get_spectre_mitigation();
+            let mitigation = get_spectre_mitigation();
             // value for can_be_indirectly_called is needed only for cet
-            if mitigation == cranelift_spectre::settings::SpectreMitigation::CET {
+            if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR {
                 let func_name = func.name.symbol();
                 if func_name == "guest_func__start" {
                     can_be_indirectly_called = true;
