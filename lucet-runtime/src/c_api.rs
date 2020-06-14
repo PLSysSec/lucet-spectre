@@ -148,6 +148,22 @@ pub unsafe extern "C" fn lucet_dl_module_load(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn lucet_dl_module_load_aslr(
+    path: *const c_char,
+    mod_out: *mut *mut lucet_dl_module,
+    aslr_enabled: bool
+) -> lucet_error {
+    assert_nonnull!(mod_out);
+    let path = CStr::from_ptr(path);
+    DlModule::load_aslr(path.to_string_lossy().into_owned(), aslr_enabled)
+        .map(|m| {
+            mod_out.write(Arc::into_raw(m) as _);
+            lucet_error::Ok
+        })
+        .unwrap_or_else(|e| e.into())
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn lucet_dl_module_release(module: *const lucet_dl_module) {
     Arc::from_raw(module as *const DlModule);
 }

@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include "lucet.h"
 #include "lucet_wasi.h"
@@ -22,7 +23,9 @@ typedef struct LucetCtx_ {
 static LucetCtx lucet_setup(void)
 {
     struct lucet_dl_module *mod;
-    ASSERT_OK(lucet_dl_module_load(xstr(WASM_MODULE), &mod));
+    const char* module_path = xstr(WASM_MODULE);
+    bool aslr = strstr(module_path, "aslr") != NULL;
+    ASSERT_OK(lucet_dl_module_load_aslr(module_path, &mod, aslr));
     struct lucet_region *region;
     ASSERT_OK(lucet_test_region_create(1, NULL, &region));
     struct lucet_wasi_ctx *wasi_ctx = lucet_wasi_ctx_create();

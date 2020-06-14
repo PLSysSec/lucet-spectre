@@ -32,15 +32,15 @@ LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
 COMMON_CFLAGS:=--std=c99 -Ofast -Wall -W -Wno-implicit-fallthrough -I$(SIGHTGLASS)/include
 UNROLL_FLAGS=-funroll-loops -mllvm --unroll-runtime -mllvm --unroll-runtime-epilog
 
-LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence --spectre-disable-core-switching
-STRAWMAN_FLAGS:=--spectre-mitigation=strawman --spectre-disable-core-switching
-SFI_FLAGS:=--spectre-mitigation=sfi --spectre-disable-core-switching --spectre-disable-btbflush
-CET_FLAGS:=--spectre-mitigation=cet --spectre-disable-core-switching
-SFI_SBXONLY_FLAGS:=--spectre-mitigation=sfi --spectre-only-sandbox-isolation --spectre-disable-core-switching
-CET_SBXONLY_FLAGS:=--spectre-mitigation=cet --spectre-only-sandbox-isolation --spectre-disable-core-switching
+LOADLFENCE_FLAGS:=--spectre-mitigation=loadlfence
+STRAWMAN_FLAGS:=--spectre-mitigation=strawman
+SFI_FULL_FLAGS:=--spectre-mitigation=sfi
+CET_FULL_FLAGS:=--spectre-mitigation=cet
+SFI_ASLR_FLAGS:=--spectre-mitigation=sfiaslr
+CET_ASLR_FLAGS:=--spectre-mitigation=cetaslr
 BLADE_FLAGS:=--spectre-pht-mitigation=blade
 PHTTOBTB_FLAGS:=--spectre-pht-mitigation=phttobtb
-CFI_FLAGS:=--spectre-pht-mitigation=cfi
+INTERLOCK_FLAGS:=--spectre-pht-mitigation=interlock
 
 
 SHOOTOUT_NATIVE_CFLAGS:=-march=native -fPIC \
@@ -55,44 +55,62 @@ ifdef CI
 	SIGHTGLASS_ARGS:=--quick
 endif
 
-default: run
+default: build
 
 .PHONY: bench
 bench: run
 
 .PHONY: run
-#run: build
-#	taskset -c 1 $(LUCET_ROOT)/target/release/sightglass -c sightglass.toml $(SIGHTGLASS_ARGS)
-#	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
-#	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass
-#	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
-#	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/results-latest.csv
-#	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
 
 run:
+	-rm -rf /tmp/sightglass_results.csv
 	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass
-	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly
-	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/both
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/baseline
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/ours
+	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive
 
 	$(LUCET_ROOT)/target/release/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
-	cp /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv
-	mv /tmp/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/reference-latest.csv
+	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/reference-latest.csv
+	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference-latest.csv
+	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/reference-latest.csv
+	rm /tmp/sightglass_results.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c sbxonly_sfi.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c baseline.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/baseline-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c sbxonly_cet.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/sbxonly_cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c reference_unrolled.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference_unrolled-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c both_sfi.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/both_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_sfi-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c sfi_aslr.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_aslr-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c both_cet.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/both_cet-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet_aslr.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_aslr-latest.csv
 
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py --usePercent $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/sbxonly/sbxonly_cet-latest.csv
+	$(LUCET_ROOT)/target/release/sightglass -c sfi_full.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_full-latest.csv
 
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass/both/reference-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_sfi-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/both/both_cet-latest.csv
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet_full.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_full-latest.csv
+
+	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c expensive.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/expensive.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/reference-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/baseline-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py --usePercent \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference_unrolled-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_aslr-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_aslr-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_full-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_full-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py --usePercent \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/reference-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/expensive.csv
 
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass $(LUCET_ROOT)/../benchmarks/sightglass_$(shell date --iso=seconds)
 
@@ -101,9 +119,9 @@ run_pht:
 	mkdir $(LUCET_ROOT)/../benchmarks/current_sightglass_pht
 
 	$(LUCET_ROOT)/target/release/sightglass -c pht.toml $(SIGHTGLASS_ARGS)
-	mv /tmp/results-latest.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/results-latest.csv
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/sightglass_results.csv
 
-	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/results-latest.csv
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/sightglass_results.csv
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht $(LUCET_ROOT)/../benchmarks/sightglass_pht_$(shell date --iso=seconds)
 
 
@@ -123,17 +141,17 @@ build: build/loadlfence/module.so
 build: build/strawman/implementation.so
 build: build/strawman/module.so
 
-build: build/sfi/implementation.so
-build: build/sfi/module.so
+build: build/sfi_full/implementation.so
+build: build/sfi_full/module.so
 
-build: build/cet/implementation.so
-build: build/cet/module.so
+build: build/cet_full/implementation.so
+build: build/cet_full/module.so
 
-build: build/sfi_sbxonly/implementation.so
-build: build/sfi_sbxonly/module.so
+build: build/sfi_aslr/implementation.so
+build: build/sfi_aslr/module.so
 
-build: build/cet_sbxonly/implementation.so
-build: build/cet_sbxonly/module.so
+build: build/cet_aslr/implementation.so
+build: build/cet_aslr/module.so
 
 build: build/blade/implementation.so
 build: build/blade/module.so
@@ -141,17 +159,8 @@ build: build/blade/module.so
 build: build/phttobtb/implementation.so
 build: build/phttobtb/module.so
 
-build: build/cfi/implementation.so
-build: build/cfi/module.so
-
-build: build/blade_unroll/implementation.so
-build: build/blade_unroll/module.so
-
-build: build/phttobtb_unroll/implementation.so
-build: build/phttobtb_unroll/module.so
-
-build: build/cfi_unroll/implementation.so
-build: build/cfi_unroll/module.so
+build: build/interlock/implementation.so
+build: build/interlock/module.so
 
 build: $(LUCET_ROOT)/target/release/sightglass
 
@@ -236,37 +245,37 @@ build/strawman/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/strawman/module.so) \
 		-c $^ -o $@
-build/sfi/%.o: %.c
+build/sfi_full/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/sfi/module.so) \
+		-DWASM_MODULE=$(abspath build/sfi_full/module.so) \
 		-c $^ -o $@
-build/cet/%.o: %.c
+build/cet_full/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) $(CET_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/cet/module.so) \
+		-DWASM_MODULE=$(abspath build/cet_full/module.so) \
 		-c $^ -o $@
-build/sfi_sbxonly/%.o: %.c
+build/sfi_aslr/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/sfi_sbxonly/module.so) \
+		-DWASM_MODULE=$(abspath build/sfi_aslr/module.so) \
 		-c $^ -o $@
-build/cet_sbxonly/%.o: %.c
+build/cet_aslr/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) $(CET_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/cet_sbxonly/module.so) \
+		-DWASM_MODULE=$(abspath build/cet_aslr/module.so) \
 		-c $^ -o $@
 build/blade/%.o: %.c
 	@mkdir -p $(@D)
@@ -284,37 +293,13 @@ build/phttobtb/%.o: %.c
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/phttobtb/module.so) \
 		-c $^ -o $@
-build/cfi/%.o: %.c
+build/interlock/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
 		-fvisibility=default \
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/cfi/module.so) \
-		-c $^ -o $@
-build/blade_unroll/%.o: %.c
-	@mkdir -p $(@D)
-	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
-		-fvisibility=default \
-		-I$(LUCET_RUNTIME)/include \
-		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/blade_unroll/module.so) \
-		-c $^ -o $@
-build/phttobtb_unroll/%.o: %.c
-	@mkdir -p $(@D)
-	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
-		-fvisibility=default \
-		-I$(LUCET_RUNTIME)/include \
-		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/phttobtb_unroll/module.so) \
-		-c $^ -o $@
-build/cfi_unroll/%.o: %.c
-	@mkdir -p $(@D)
-	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
-		-fvisibility=default \
-		-I$(LUCET_RUNTIME)/include \
-		-I$(LUCET_WASI)/include \
-		-DWASM_MODULE=$(abspath build/cfi_unroll/module.so) \
+		-DWASM_MODULE=$(abspath build/interlock/module.so) \
 		-c $^ -o $@
 
 build/lucet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
@@ -357,42 +342,42 @@ build/strawman/implementation.so: build/strawman/hostcalls.o
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/sfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/sfi/implementation.so: build/sfi/wrapper.o
-build/sfi/implementation.so: build/sfi/hostcalls.o
+build/sfi_full/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/sfi_full/implementation.so: build/sfi_full/wrapper.o
+build/sfi_full/implementation.so: build/sfi_full/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared \
-		build/sfi/wrapper.o build/sfi/hostcalls.o \
+		build/sfi_full/wrapper.o build/sfi_full/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cet/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/cet/implementation.so: build/cet/wrapper.o
-build/cet/implementation.so: build/cet/hostcalls.o
+build/cet_full/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/cet_full/implementation.so: build/cet_full/wrapper.o
+build/cet_full/implementation.so: build/cet_full/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
-		build/cet/wrapper.o build/cet/hostcalls.o \
+		build/cet_full/wrapper.o build/cet_full/hostcalls.o \
 		-L $(LUCET_SIGHTGLASS_TARGET)/release \
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/sfi_sbxonly/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/sfi_sbxonly/implementation.so: build/sfi_sbxonly/wrapper.o
-build/sfi_sbxonly/implementation.so: build/sfi_sbxonly/hostcalls.o
+build/sfi_aslr/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/sfi_aslr/implementation.so: build/sfi_aslr/wrapper.o
+build/sfi_aslr/implementation.so: build/sfi_aslr/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared \
-		build/sfi_sbxonly/wrapper.o build/sfi_sbxonly/hostcalls.o \
+		build/sfi_aslr/wrapper.o build/sfi_aslr/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cet_sbxonly/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/cet_sbxonly/implementation.so: build/cet_sbxonly/wrapper.o
-build/cet_sbxonly/implementation.so: build/cet_sbxonly/hostcalls.o
+build/cet_aslr/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/cet_aslr/implementation.so: build/cet_aslr/wrapper.o
+build/cet_aslr/implementation.so: build/cet_aslr/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
-		build/cet_sbxonly/wrapper.o build/cet_sbxonly/hostcalls.o \
+		build/cet_aslr/wrapper.o build/cet_aslr/hostcalls.o \
 		-L $(LUCET_SIGHTGLASS_TARGET)/release \
 		-Wl,-rpath $(LUCET_SIGHTGLASS_TARGET)/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
@@ -417,42 +402,12 @@ build/phttobtb/implementation.so: build/phttobtb/hostcalls.o
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
-build/cfi/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/cfi/implementation.so: build/cfi/wrapper.o
-build/cfi/implementation.so: build/cfi/hostcalls.o
+build/interlock/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
+build/interlock/implementation.so: build/interlock/wrapper.o
+build/interlock/implementation.so: build/interlock/hostcalls.o
 	@mkdir -p $(@D)
 	$(CXX) -rdynamic -shared \
-		build/cfi/wrapper.o build/cfi/hostcalls.o \
-		-L $(LUCET_ROOT)/target/release \
-		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
-
-build/blade_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/blade_unroll/implementation.so: build/blade_unroll/wrapper.o
-build/blade_unroll/implementation.so: build/blade_unroll/hostcalls.o
-	@mkdir -p $(@D)
-	$(CXX) -rdynamic -shared \
-		build/blade_unroll/wrapper.o build/blade_unroll/hostcalls.o \
-		-L $(LUCET_ROOT)/target/release \
-		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
-
-build/phttobtb_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/phttobtb_unroll/implementation.so: build/phttobtb_unroll/wrapper.o
-build/phttobtb_unroll/implementation.so: build/phttobtb_unroll/hostcalls.o
-	@mkdir -p $(@D)
-	$(CXX) -rdynamic -shared \
-		build/phttobtb_unroll/wrapper.o build/phttobtb_unroll/hostcalls.o \
-		-L $(LUCET_ROOT)/target/release \
-		-Wl,-rpath $(LUCET_ROOT)/target/release \
-		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
-
-build/cfi_unroll/implementation.so: $(LUCET_ROOT)/target/release/liblucet_unified.a
-build/cfi_unroll/implementation.so: build/cfi_unroll/wrapper.o
-build/cfi_unroll/implementation.so: build/cfi_unroll/hostcalls.o
-	@mkdir -p $(@D)
-	$(CXX) -rdynamic -shared \
-		build/cfi_unroll/wrapper.o build/cfi_unroll/hostcalls.o \
+		build/interlock/wrapper.o build/interlock/hostcalls.o \
 		-L $(LUCET_ROOT)/target/release \
 		-Wl,-rpath $(LUCET_ROOT)/target/release \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
@@ -487,39 +442,39 @@ build/strawman/module.so: build/lucet/module.wasm
 		$(STRAWMAN_FLAGS) \
 		$< -o $@
 
-build/sfi/module.so: build/lucet/module.wasm
+build/sfi_full/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(SFI_FLAGS) \
+		$(SFI_FULL_FLAGS) \
 		$< -o $@
 
-build/cet/module.so: build/lucet/module.wasm
+build/cet_full/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CET_FLAGS) \
+		$(CET_FULL_FLAGS) \
 		$< -o $@
 
-build/sfi_sbxonly/module.so: build/lucet/module.wasm
+build/sfi_aslr/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(SFI_SBXONLY_FLAGS) \
+		$(SFI_ASLR_FLAGS) \
 		$< -o $@
 
-build/cet_sbxonly/module.so: build/lucet/module.wasm
+build/cet_aslr/module.so: build/lucet/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CET_SBXONLY_FLAGS) \
+		$(CET_ASLR_FLAGS) \
 		$< -o $@
 
-build/blade/module.so: build/lucet/module.wasm
+build/blade/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
@@ -527,7 +482,7 @@ build/blade/module.so: build/lucet/module.wasm
 		$(BLADE_FLAGS) \
 		$< -o $@
 
-build/phttobtb/module.so: build/lucet/module.wasm
+build/phttobtb/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
@@ -535,36 +490,12 @@ build/phttobtb/module.so: build/lucet/module.wasm
 		$(PHTTOBTB_FLAGS) \
 		$< -o $@
 
-build/cfi/module.so: build/lucet/module.wasm
+build/interlock/module.so: build/lucet_unroll/module.wasm
 	@mkdir -p $(@D)
 	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CFI_FLAGS) \
-		$< -o $@
-
-build/blade_unroll/module.so: build/lucet_unroll/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(BLADE_FLAGS) \
-		$< -o $@
-
-build/phttobtb_unroll/module.so: build/lucet_unroll/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(PHTTOBTB_FLAGS) \
-		$< -o $@
-
-build/cfi_unroll/module.so: build/lucet_unroll/module.wasm
-	@mkdir -p $(@D)
-	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
-		--bindings=bindings.json \
-		--bindings=$(LUCET_WASI)/bindings.json \
-		$(CFI_FLAGS) \
+		$(INTERLOCK_FLAGS) \
 		$< -o $@
 
 $(LUCETC) $(LUCET_ROOT)/target/release/liblucet_unified.a $(LUCET_ROOT)/target/release/sightglass:

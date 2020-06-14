@@ -1,8 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "2.Strawman", library_path = "./build/strawman/implementation.so" },
-  { name = "3.Loadlfence", library_path = "./build/loadlfence/implementation.so" },
-  { name = "4.Sfi", library_path = "./build/sfi/implementation.so" },
+  { name = "6.Cet_Full", library_path = "./build/cet_full/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
@@ -12,8 +10,8 @@ single_core = true
 # Outputs to stdout if no file name is provided
 output = [
   { format = "Text" },
-  { format = "JSON", file = "/tmp/both_sfi-latest.json" },
-  { format = "CSV", file = "/tmp/both_sfi-latest.csv" }
+  { format = "JSON", file = "/tmp/sightglass_results.json" },
+  { format = "CSV", file = "/tmp/sightglass_results.csv" }
 ]
 
 # Minimum number of rounds to perform for each test

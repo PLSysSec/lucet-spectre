@@ -1,6 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "3.Cet_sbxonly", library_path = "./build/cet_sbxonly/implementation.so" },
+  { name = "3.Sfi_Aslr", library_path = "./build/sfi_aslr/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
@@ -10,8 +10,8 @@ single_core = true
 # Outputs to stdout if no file name is provided
 output = [
   { format = "Text" },
-  { format = "JSON", file = "/tmp/sbxonly_cet-latest.json" },
-  { format = "CSV", file = "/tmp/sbxonly_cet-latest.csv" }
+  { format = "JSON", file = "/tmp/sightglass_results.json" },
+  { format = "CSV", file = "/tmp/sightglass_results.csv" }
 ]
 
 # Minimum number of rounds to perform for each test

@@ -14,6 +14,7 @@
 #define LUCET_WASM_PAGE_SIZE (64 * 1024)
 
 enum lucet_error lucet_dl_module_load(const char *path, struct lucet_dl_module **mod_out);
+enum lucet_error lucet_dl_module_load_aslr(const char *path, struct lucet_dl_module **mod_out, bool aslr_enabled);
 
 void lucet_dl_module_release(const struct lucet_dl_module *module);
 

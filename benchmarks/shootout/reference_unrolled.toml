@@ -1,13 +1,6 @@
 # Test suites to run
 test_suites = [
-  { name = "1.Stock", library_path = "./build/lucet/implementation.so" },
-  { name = "2.Blade", library_path = "./build/blade/implementation.so" },
-  { name = "3.PhtToBtb", library_path = "./build/phttobtb/implementation.so" },
-  { name = "4.Interlock", library_path = "./build/interlock/implementation.so" },
-  { name = "5.Unr_Stock", library_path = "./build/lucet_unroll/implementation.so" },
-  { name = "6.Unr_Blade", library_path = "./build/blade_unroll/implementation.so" },
-  { name = "7.Unr_PhtToBtb", library_path = "./build/phttobtb_unroll/implementation.so" },
-  { name = "8.Unr_Interlock", library_path = "./build/interlock_unroll/implementation.so" },
+  { name = "2.Stock_Unrolled", library_path = "./build/lucet_unroll/implementation.so" },
 ]
 
 # Pin the process to a single CPU core (Linux only)
