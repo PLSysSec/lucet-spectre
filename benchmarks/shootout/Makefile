@@ -17,15 +17,17 @@ SHOOTOUT_SRCS:=$(shell ls $(SHOOTOUT)/*.c)
 SHOOTOUT_NATIVE_OBJS:=
 SHOOTOUT_LUCET_OBJS:=
 
+SIGHTGLASS_TARGET=$(LUCET_ROOT)/target/release
+
 # Note this makefile uses the CET binaries only if REALLY_USE_CET is defined
 ifdef REALLY_USE_CET
 	CET_CFLAGS:=-fcf-protection=full
 	CET_LINKERFLAGS:=-Wl,-z,ibt -Wl,-z,shstk
-	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target-cet
+	CET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target-cet/release
 else
 	CET_CFLAGS:=
 	CET_LINKERFLAGS:=
-	LUCET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target
+	CET_SIGHTGLASS_TARGET:=$(LUCET_ROOT)/target/release
 endif
 
 LUCETC_FLAGS:=--opt-level speed_and_size --min-reserved-size 4294967296
@@ -69,31 +71,31 @@ run:
 	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/ours
 	mkdir -p $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive
 
-	$(LUCET_ROOT)/target/release/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c reference.toml $(SIGHTGLASS_ARGS)
 	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/reference-latest.csv
 	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference-latest.csv
 	cp /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/reference-latest.csv
 	rm /tmp/sightglass_results.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c baseline.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c baseline.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/baseline/baseline-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c reference_unrolled.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c reference_unrolled.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/reference_unrolled-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c sfi_aslr.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c sfi_aslr.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_aslr-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet_aslr.toml $(SIGHTGLASS_ARGS)
+	$(CET_SIGHTGLASS_TARGET)/sightglass -c cet_aslr.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_aslr-latest.csv
 
-	$(LUCET_ROOT)/target/release/sightglass -c sfi_full.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c sfi_full.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/sfi_full-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c cet_full.toml $(SIGHTGLASS_ARGS)
+	$(CET_SIGHTGLASS_TARGET)/sightglass -c cet_full.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours/cet_full-latest.csv
 
-	$(LUCET_SIGHTGLASS_TARGET)/release/sightglass -c expensive.toml $(SIGHTGLASS_ARGS)
+	$(SIGHTGLASS_TARGET)/sightglass -c expensive.toml $(SIGHTGLASS_ARGS)
 	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass/ours_expensive/expensive.csv
 
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py \
