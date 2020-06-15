@@ -67,6 +67,7 @@ pub struct ModuleFeatures {
     pub spectre_stop_host_poisoning: bool,
     pub spectre_pht_mitigation: u16,
     pub spectre_disable_btbflush: bool,
+    pub spectre_disable_mpk: bool,
     _hidden: (),
 }
 
@@ -91,6 +92,7 @@ impl ModuleFeatures {
             spectre_stop_host_poisoning: false,
             spectre_pht_mitigation: cranelift_spectre::settings::SpectrePHTMitigation::NONE as u16,
             spectre_disable_btbflush: false,
+            spectre_disable_mpk: false,
             _hidden: (),
         }
     }

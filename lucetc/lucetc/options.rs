@@ -278,6 +278,7 @@ impl Options {
             )
         };
         let spectre_disable_btbflush = m.is_present("spectre_disable_btbflush");
+        let spectre_disable_mpk = m.is_present("spectre_disable_mpk");
 
         cranelift_spectre::settings::use_spectre_mitigation_settings(
             spectre_mitigation_converted,
@@ -286,6 +287,7 @@ impl Options {
             spectre_stop_host_poisoning,
             spectre_pht_mitigation_converted,
             spectre_disable_btbflush,
+            spectre_disable_mpk,
         );
 
         let target = match m.value_of("target") {
@@ -549,6 +551,12 @@ SSE3 but not AVX:
                     .long("--spectre-disable-btbflush")
                     .takes_value(false)
                     .help("Internal flag for testing only. Disable BTBflush even if needed on spectre mitigations")
+            )
+            .arg(
+                Arg::with_name("spectre_disable_mpk")
+                    .long("--spectre-disable-mpk")
+                    .takes_value(false)
+                    .help("Internal flag for testing only. Disable MPK use even if needed on spectre mitigations")
             )
             .arg(
                 Arg::with_name("spectre_pht_mitigation")

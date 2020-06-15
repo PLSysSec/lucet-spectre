@@ -87,6 +87,7 @@ fn detect_features(features: &mut ModuleFeatures) {
     features.spectre_stop_host_poisoning = get_spectre_stop_host_poisoning();
     features.spectre_pht_mitigation = get_spectre_pht_mitigation() as u16;
     features.spectre_disable_btbflush = get_spectre_disable_btbflush();
+    features.spectre_disable_mpk = get_spectre_disable_mpk();
 
     if let Some(info) = cpuid.get_extended_feature_info() {
         features.bmi1 = info.has_bmi1();

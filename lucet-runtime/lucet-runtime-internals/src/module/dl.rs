@@ -191,6 +191,7 @@ impl DlModule {
             spectre_stop_host_poisoning: features.spectre_stop_host_poisoning,
             spectre_pht_mitigation: spectre_pht_mitigation,
             spectre_disable_btbflush: features.spectre_disable_btbflush,
+            spectre_disable_mpk: features.spectre_disable_mpk,
         };
 
         check_feature_support(features)?;

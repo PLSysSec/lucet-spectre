@@ -11,13 +11,14 @@ use crate::alloc::{Alloc, HOST_PAGE_SIZE_EXPECTED};
 use crate::context::Context;
 use crate::embed_ctx::CtxMap;
 use crate::error::Error;
+use lazy_static::lazy_static;
 #[cfg(feature = "concurrent_testpoints")]
 use crate::lock_testpoints::LockTestpoints;
 use crate::module::{self, FunctionHandle, Global, GlobalValue, Module, TrapCode};
 use crate::region::RegionInternal;
 use crate::val::{UntypedRetVal, Val};
 use crate::WASM_PAGE_SIZE;
-use libc::{c_void, pthread_self, siginfo_t, uintptr_t};
+use libc::{c_int, c_uint, c_void, pthread_self, siginfo_t, size_t, uintptr_t};
 use lucet_module::InstanceRuntimeData;
 use memoffset::offset_of;
 use std::any::Any;
@@ -852,6 +853,28 @@ impl Instance {
     }
 }
 
+extern "C" {
+    fn pkey_alloc(flags: c_uint, access_rights: c_uint) -> c_int;
+    fn pkey_mprotect(addr: *const c_void, len: size_t, prot: c_int, pkey: c_int) -> c_int;
+}
+lazy_static! {
+    static ref MPK_PKEY: c_int = {
+        let reserved = 0;
+        //disallow access to the new domains
+        let pkey_disable_access = 0x1;
+        let pkey_disable_write = 0x2;
+        let disable_access_bits = pkey_disable_access | pkey_disable_write;
+        let ret = unsafe {
+            pkey_alloc(reserved, disable_access_bits)
+        };
+        if ret != 1 {
+            let err = nix::errno::Errno::from_i32(nix::errno::errno());
+            panic!("Expected sandbox domain pkey to be 1. Got code {}, desc: {}", ret, err.desc());
+        }
+        ret
+    };
+}
+
 // Private API
 impl Instance {
     fn new(alloc: Alloc, module: Arc<dyn Module>, embed_ctx: CtxMap) -> Self {
@@ -989,6 +1012,23 @@ impl Instance {
         )?;
 
         self.install_activator();
+
+        // enable mpk on the shared module pages
+        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+            let mem = self.alloc.slot();
+            let start = mem.start;
+            let len = mem.limits.total_memory_size();
+            // allow only sandbox domain full access to this memory
+            let access_bits = libc::PROT_READ | libc::PROT_WRITE;
+            let ret = unsafe {
+                pkey_mprotect(start, len, access_bits, *MPK_PKEY)
+            };
+            if ret != 0 {
+                let err = nix::errno::Errno::from_i32(nix::errno::errno());
+                panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
+            }
+
+        }
         self.swap_and_return()
     }
 
