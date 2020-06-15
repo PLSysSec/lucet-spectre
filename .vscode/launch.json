@@ -228,5 +228,26 @@
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "build_fail",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--spectre-pht-mitigation", "phttobtb",
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "--emit", "obj",
+                "${workspaceFolder}/../tmp/extra_select.wasm",
+                "-o", "/tmp/extra_select.o",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
     ]
 }
