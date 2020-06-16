@@ -1086,9 +1086,8 @@ impl Instance {
         self.state = State::Running;
 
         let mem = self.alloc.slot();
-        // get memory bounds excluding initial instance page
-        let start = mem.start;
-        let len = mem.limits.total_memory_size();
+        let start = mem.heap;
+        let len = mem.limits.heap_memory_size;
 
         let res = self.with_current_instance(|i| {
             i.with_signals_on(|i| {
@@ -1097,30 +1096,15 @@ impl Instance {
                         // app relinquishes this memory and only allows the sandbox domain to access this memory
                         move_to_sbx_domain_if_needed(start, len);
                     }
-                    // For mpk schemes
-                    if cranelift_spectre::runtime::get_should_switch_mpk_in() {
-                        // we briefly allow access to both MPK domains for the context switch in as we aren't handling any sandbox secrets
-                        // the perform_transition_protection_in will restrict this just before we enter the sandbox
-                        cranelift_spectre::runtime::mpk_allow_all_mem();
-                    }
                     // Save the current context into `host_ctx`, and jump to the guest context. The
                     // lucet context is linked to host_ctx, so it will return here after it finishes,
                     // successfully or otherwise.
                     unsafe { Context::swap(&mut *host_ctx.get(), &mut i.ctx) };
 
-                    if cranelift_spectre::runtime::get_should_switch_mpk_in() {
-                        // we briefly allow access to both MPK domains for the context switch out as we aren't handling any sandbox secrets
-                        cranelift_spectre::runtime::mpk_allow_all_mem();
-                    }
                     Ok(())
                 })
             })
         });
-
-        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
-            // Back to app memory only
-            cranelift_spectre::runtime::mpk_allow_app_mem_only();
-        }
 
         #[cfg(feature = "concurrent_testpoints")]
         self.lock_testpoints
