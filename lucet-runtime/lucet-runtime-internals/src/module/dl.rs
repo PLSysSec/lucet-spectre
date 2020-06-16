@@ -231,6 +231,8 @@ impl DlModule {
             &[]
         };
 
+        crate::instance::move_to_sbx_domain_if_needed(serialized_module.tables_ptr as *const c_void, serialized_module.tables_len as usize);
+
         Ok(Arc::new(DlModule {
             lib,
             fbase,
