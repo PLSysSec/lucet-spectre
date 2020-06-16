@@ -60,6 +60,9 @@ TestsConfig tests_config = { .global_setup    = NULL,
 
 static LucetCtx lucet_ctx;
 
+uint32_t change_mpk_domain(uint32_t domain);
+uint32_t get_mpk_domain();
+
 static void setup_wrapper(const char *name, void *global_ctx_, void **ctx_p)
 {
     (void) global_ctx_;
@@ -67,7 +70,16 @@ static void setup_wrapper(const char *name, void *global_ctx_, void **ctx_p)
         lucet_ctx.inst, name, 2,
         (struct lucet_val[]){ LUCET_VAL_GUEST_PTR(0), LUCET_VAL_GUEST_PTR(lucet_ctx.ctx_p) },
         NULL));
+
+    #ifdef USE_MPK
+        uint32_t original = get_mpk_domain();
+        const uint32_t all_memory = 0; // 0b0000
+        change_mpk_domain(all_memory);
+    #endif
     *ctx_p = (void *) (uintptr_t) * (guest_ptr_t *) &lucet_ctx.heap[lucet_ctx.ctx_p];
+    #ifdef USE_MPK
+        change_mpk_domain(original);
+    #endif
 }
 
 #define SETUP(NAME)                                        \
