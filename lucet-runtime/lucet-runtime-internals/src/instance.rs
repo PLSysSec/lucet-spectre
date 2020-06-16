@@ -1068,26 +1068,27 @@ impl Instance {
         );
         self.state = State::Running;
 
-        if first_entry {
-            if cranelift_spectre::runtime::get_should_switch_mpk_in() {
-                let mem = self.alloc.slot();
-                let start = mem.start;
-                let len = mem.limits.total_memory_size();
-                // allow only sandbox domain full access to this memory
-                let access_bits = libc::PROT_READ | libc::PROT_WRITE;
-                let ret = unsafe {
-                    pkey_mprotect(start, len, access_bits, *MPK_PKEY)
-                };
-                if ret != 0 {
-                    let err = nix::errno::Errno::from_i32(nix::errno::errno());
-                    panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
-                }
-            }
-        }
+        let mem = self.alloc.slot();
+        let start = mem.start;
+        let len = mem.limits.total_memory_size();
 
         let res = self.with_current_instance(|i| {
             i.with_signals_on(|i| {
                 HOST_CTX.with(|host_ctx| {
+                    if first_entry {
+                        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+                            // allow only sandbox domain full access to this memory
+                            let access_bits = libc::PROT_READ | libc::PROT_WRITE;
+                            println!("Setting memory at address {} , length ; {} to sbx domain", start as u64, len);
+                            let ret = unsafe {
+                                pkey_mprotect(start, len, access_bits, *MPK_PKEY)
+                            };
+                            if ret != 0 {
+                                let err = nix::errno::Errno::from_i32(nix::errno::errno());
+                                panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
+                            }
+                        }
+                    }
                     // Save the current context into `host_ctx`, and jump to the guest context. The
                     // lucet context is linked to host_ctx, so it will return here after it finishes,
                     // successfully or otherwise.
