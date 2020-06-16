@@ -1107,10 +1107,20 @@ impl Instance {
                     // lucet context is linked to host_ctx, so it will return here after it finishes,
                     // successfully or otherwise.
                     unsafe { Context::swap(&mut *host_ctx.get(), &mut i.ctx) };
+
+                    if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+                        // we briefly allow access to both MPK domains for the context switch out as we aren't handling any sandbox secrets
+                        cranelift_spectre::runtime::mpk_allow_all_mem();
+                    }
                     Ok(())
                 })
             })
         });
+
+        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+            // Back to app memory only
+            cranelift_spectre::runtime::mpk_allow_app_mem_only();
+        }
 
         #[cfg(feature = "concurrent_testpoints")]
         self.lock_testpoints
