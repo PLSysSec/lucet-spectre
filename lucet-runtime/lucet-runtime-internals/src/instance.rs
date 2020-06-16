@@ -1094,7 +1094,7 @@ impl Instance {
             i.with_signals_on(|i| {
                 HOST_CTX.with(|host_ctx| {
                     if first_entry {
-                        // allow only sandbox domain full access to this memory
+                        // app relinquishes this memory and only allows the sandbox domain to access this memory
                         move_to_sbx_domain_if_needed(start, len);
                     }
                     // For mpk schemes

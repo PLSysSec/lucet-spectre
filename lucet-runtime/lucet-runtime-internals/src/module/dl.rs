@@ -231,13 +231,6 @@ impl DlModule {
             &[]
         };
 
-        let page_size = 4 * 1024; //4k
-        // capture the relocations
-        let fbase_u64 = fbase as u64;
-        let aligned_fbase = fbase_u64 - (fbase_u64 % page_size);
-        crate::instance::move_to_sbx_domain_if_needed(aligned_fbase as *const c_void, page_size as usize);
-        crate::instance::move_to_sbx_domain_if_needed(serialized_module.tables_ptr as *const c_void, serialized_module.tables_len as usize);
-
         Ok(Arc::new(DlModule {
             lib,
             fbase,
