@@ -529,7 +529,7 @@ impl Instance {
 
         self.resumed_val = Some(Box::new(val) as Box<dyn Any + 'static>);
 
-        self.swap_and_return()
+        self.swap_and_return(false)
     }
 
     /// Run the module's [start function][start], if one exists.
@@ -1013,23 +1013,7 @@ impl Instance {
 
         self.install_activator();
 
-        // enable mpk on the shared module pages
-        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
-            let mem = self.alloc.slot();
-            let start = mem.start;
-            let len = mem.limits.total_memory_size();
-            // allow only sandbox domain full access to this memory
-            let access_bits = libc::PROT_READ | libc::PROT_WRITE;
-            let ret = unsafe {
-                pkey_mprotect(start, len, access_bits, *MPK_PKEY)
-            };
-            if ret != 0 {
-                let err = nix::errno::Errno::from_i32(nix::errno::errno());
-                panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
-            }
-
-        }
-        self.swap_and_return()
+        self.swap_and_return(true)
     }
 
     /// Prepare the guest so that it will update its execution domain upon entry.
@@ -1071,7 +1055,7 @@ impl Instance {
     /// This must only be called for an instance in a ready, non-fatally faulted, or yielded state,
     /// or in the not-started state on the start function. The public wrappers around this function
     /// should make sure the state is appropriate.
-    fn swap_and_return(&mut self) -> Result<RunResult, Error> {
+    fn swap_and_return(&mut self, first_entry: bool) -> Result<RunResult, Error> {
         let is_start_func = self
             .entrypoint
             .expect("we always have an entrypoint by now")
@@ -1083,6 +1067,23 @@ impl Instance {
                 || self.state.is_yielded()
         );
         self.state = State::Running;
+
+        if first_entry {
+            if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+                let mem = self.alloc.slot();
+                let start = mem.start;
+                let len = mem.limits.total_memory_size();
+                // allow only sandbox domain full access to this memory
+                let access_bits = libc::PROT_READ | libc::PROT_WRITE;
+                let ret = unsafe {
+                    pkey_mprotect(start, len, access_bits, *MPK_PKEY)
+                };
+                if ret != 0 {
+                    let err = nix::errno::Errno::from_i32(nix::errno::errno());
+                    panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
+                }
+            }
+        }
 
         let res = self.with_current_instance(|i| {
             i.with_signals_on(|i| {
