@@ -882,7 +882,7 @@ pub fn move_to_sbx_domain_if_needed(start: *const c_void, len: usize) {
     }
 
     let access_bits = libc::PROT_READ | libc::PROT_WRITE;
-    println!("Setting memory at address {} , length ; {} to sbx domain", start as u64, len);
+    // println!("Setting memory at address {} , length ; {} to sbx domain", start as u64, len);
     let ret = unsafe {
         pkey_mprotect(start, len, access_bits, *MPK_PKEY)
     };
