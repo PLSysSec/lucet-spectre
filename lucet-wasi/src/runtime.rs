@@ -222,7 +222,17 @@ impl<'a> wasi_snapshot_preview1::WasiSnapshotPreview1 for LucetWasiCtx<'a> {
         fd: types::Fd,
         ciovs: &types::CiovecArray<'_>,
     ) -> Result<types::Size, types::Errno> {
-        self.wasi().fd_write(fd, ciovs)
+        // if we use mpk we need to briefly allow reads
+        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+            // Access to all memory
+            cranelift_spectre::runtime::mpk_allow_all_mem();
+            let ret = self.wasi().fd_write(fd, ciovs);
+            // Back to app memory only
+            cranelift_spectre::runtime::mpk_allow_app_mem_only();
+            ret
+        } else {
+            self.wasi().fd_write(fd, ciovs)
+        }
     }
 
     fn path_create_directory(
