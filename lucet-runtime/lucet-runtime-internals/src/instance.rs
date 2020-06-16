@@ -1069,14 +1069,15 @@ impl Instance {
         self.state = State::Running;
 
         let mem = self.alloc.slot();
+        // get memory bounds excluding initial instance page
         let start = mem.start;
         let len = mem.limits.total_memory_size();
 
         let res = self.with_current_instance(|i| {
             i.with_signals_on(|i| {
                 HOST_CTX.with(|host_ctx| {
-                    if first_entry {
-                        if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+                    if cranelift_spectre::runtime::get_should_switch_mpk_in() {
+                        if first_entry {
                             // allow only sandbox domain full access to this memory
                             let access_bits = libc::PROT_READ | libc::PROT_WRITE;
                             println!("Setting memory at address {} , length ; {} to sbx domain", start as u64, len);
@@ -1088,6 +1089,9 @@ impl Instance {
                                 panic!("pkey_mprotect failed. Got code {}, desc: {}", ret, err.desc());
                             }
                         }
+                        // we briefly allow access to both MPK domains for the context switch in as we aren't handling any sandbox secrets
+                        // the perform_transition_protection_in will restrict this just before we enter the sandbox
+                        cranelift_spectre::runtime::mpk_allow_all_mem();
                     }
                     // Save the current context into `host_ctx`, and jump to the guest context. The
                     // lucet context is linked to host_ctx, so it will return here after it finishes,
