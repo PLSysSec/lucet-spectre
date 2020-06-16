@@ -83,6 +83,7 @@ _lucet_context_backstop:
     mov %rdx, (10*8 + 8*16 + 8*1)(%rbp)
     movdqu %xmm0, (10*8 + 8*16 + 8*2)(%rbp) /* floating-point return value */
 
+    call perform_transition_protection_out@PLT
     mov (10*8 + 8*16 + 8*2 + 16)(%rbp), %rdi /* load the parent context to forward values in return value registers */
     // load `backstop_callback`, but skip calling it if it's null
     mov (10*8 + 8*16 + 8*2 + 16 + 8)(%rbp), %rsi
@@ -220,8 +221,6 @@ _lucet_context_swap_out:
     movdqu (10*8 + 5*16)(%rsi), %xmm5
     movdqu (10*8 + 6*16)(%rsi), %xmm6
     movdqu (10*8 + 7*16)(%rsi), %xmm7
-
-    call perform_transition_protection_out@PLT
 
     // restore rsi when we're done with the context pointer
     mov (8*8)(%rsi), %rsi
