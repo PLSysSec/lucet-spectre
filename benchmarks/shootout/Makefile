@@ -262,6 +262,7 @@ build/cet_full/%.o: %.c
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/cet_full/module.so) \
+		-DUSE_MPK=1 \
 		-c $^ -o $@
 build/sfi_aslr/%.o: %.c
 	@mkdir -p $(@D)
@@ -278,6 +279,7 @@ build/cet_aslr/%.o: %.c
 		-I$(LUCET_RUNTIME)/include \
 		-I$(LUCET_WASI)/include \
 		-DWASM_MODULE=$(abspath build/cet_aslr/module.so) \
+		-DUSE_MPK=1 \
 		-c $^ -o $@
 build/blade/%.o: %.c
 	@mkdir -p $(@D)
