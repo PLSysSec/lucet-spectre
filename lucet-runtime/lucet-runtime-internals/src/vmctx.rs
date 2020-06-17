@@ -392,7 +392,8 @@ impl Vmctx {
 pub unsafe fn instance_from_vmctx<'a>(vmctx: *mut lucet_vmctx) -> &'a mut Instance {
     assert!(!vmctx.is_null(), "vmctx is not null");
 
-    let inst_ptr = (vmctx as usize - instance_heap_offset()) as *mut Instance;
+    let s = cranelift_spectre::settings::get_shadow_stack_size_with_guards();
+    let inst_ptr = (vmctx as usize - instance_heap_offset() - s) as *mut Instance;
 
     // We shouldn't actually need to access the thread local, only the exception handler should
     // need to. But, as long as the thread local exists, we should make sure that the guest

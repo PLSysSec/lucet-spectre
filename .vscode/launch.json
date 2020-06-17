@@ -8,7 +8,7 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "png_strawman",
+            "name": "test_strawman",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
                 "--spectre-mitigation", "strawman",
@@ -17,8 +17,8 @@
                 "--min-reserved-size", "4GiB",
                 "--max-reserved-size", "4GiB",
                 "--emit", "obj",
-                "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest.wasm",
-                "-o", "${workspaceFolder}/../out/sfi-spectre-test/libpng/pngtest_spectre_strawman.o",
+                "${workspaceFolder}/../out/sfi-spectre-test/basic_test/test.wasm",
+                "-o", "$/tmp/test_spectre_strawman.o",
             ],
             "env": {
                 "RUST_BACKTRACE" : "1"
@@ -29,10 +29,10 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "test_sfi_host",
+            "name": "test_sfi",
             "program": "${workspaceFolder}/target/debug/lucetc",
             "args": [
-                "--spectre-mitigation", "sfi", "--spectre-stop-host-poisoning",
+                "--spectre-mitigation", "sfi",
                 "--bindings", "./lucet-wasi/bindings.json",
                 "--guard-size", "4GiB",
                 "--min-reserved-size", "4GiB",

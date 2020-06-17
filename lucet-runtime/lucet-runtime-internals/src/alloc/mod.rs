@@ -508,6 +508,7 @@ impl Limits {
     pub fn total_memory_size(&self) -> usize {
         // Memory is laid out as follows:
         // * the instance (up to instance_heap_offset)
+        // * shadow_stack_and_guards (one guard page, the shadow stack, one guard page)
         // * the heap, followed by guard pages
         // * the stack (grows towards heap guard pages)
         // * globals
@@ -516,6 +517,7 @@ impl Limits {
 
         [
             instance_heap_offset(),
+            cranelift_spectre::settings::get_shadow_stack_size_with_guards(),
             self.heap_address_space_size,
             host_page_size(),
             self.stack_size,
