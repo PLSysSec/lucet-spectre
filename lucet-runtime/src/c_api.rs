@@ -82,10 +82,11 @@ pub unsafe extern "C" fn lucet_mmap_region_create(
     region_out: *mut *mut lucet_region,
 ) -> lucet_error {
     assert_nonnull!(region_out);
-    let limits = limits
+    let mut limits = limits
         .as_ref()
         .map(|l| l.into())
         .unwrap_or(Limits::default());
+    limits.stack_size = 8 * 1024 * 1024;
     match MmapRegion::create(instance_capacity as usize, &limits) {
         Ok(region) => {
             let region_thin = Arc::into_raw(Arc::new(region as Arc<dyn Region>));
