@@ -382,6 +382,14 @@ impl MmapRegion {
             }
         };
 
+        let shadow_stack_full_start = mem as usize + instance_heap_offset();
+        let _shadow_stack_full_end = shadow_stack_full_start + s;
+        let shadow_stack_rw_start = mem as usize + instance_heap_offset() + host_page_size();
+        let shadow_stack_rw_len = s - 2*host_page_size();
+        let shadow_stack_rw_end = shadow_stack_rw_start + shadow_stack_rw_len;
+
+        // println!("Shadowstack is at [0x{:x} , 0x{:x})", shadow_stack_full_start, shadow_stack_full_end);
+
         // set the first part of the memory to read/write so that the `Instance` can be stored there
         // TODO: post slot refactor, is this necessary/desirable?
         unsafe {
@@ -391,10 +399,15 @@ impl MmapRegion {
                 ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             )?;
 
+            // println!("Shadowstack perm enabled at [0x{:x} , 0x{:x})",
+            //     shadow_stack_rw_start,
+            //     shadow_stack_rw_end,
+            // );
+
             // make shadow stack r/w
             mprotect(
-                (mem as usize + instance_heap_offset() + host_page_size()) as *mut c_void,
-                s - (2*host_page_size()),
+                shadow_stack_rw_start as *mut c_void,
+                shadow_stack_rw_len,
                 ProtFlags::PROT_READ | ProtFlags::PROT_WRITE,
             )?;
         };
@@ -405,6 +418,22 @@ impl MmapRegion {
         let stack = stack_guard + host_page_size();
         let globals = stack + region.limits.stack_size;
         let sigstack = globals + region.limits.globals_size + host_page_size();
+
+        // println!("Shadowstack init at 0x{:x} to 0x{:x}", (shadow_stack_rw_end - 32), (shadow_stack_rw_end - 32));
+
+        // initialize shadowstack
+        unsafe {
+            // bottom most aligned slot holds the "curr" stack top ptr
+            // stuff below that is zero
+            // start with the first free entry initialized to bottom -16
+            // an attack overriding curr is not possible
+            // as all inst seq can only load+increment+store or load+dec+store
+            // also if anyone tries to return to this stack top ptr address this is in a page without exec bits
+            std::ptr::write((shadow_stack_rw_end - 32) as *mut u64, (shadow_stack_rw_end - 32) as u64);
+            std::ptr::write((shadow_stack_rw_end - 24) as *mut u64, 0);
+            std::ptr::write((shadow_stack_rw_end - 16) as *mut u64, 0);
+            std::ptr::write((shadow_stack_rw_end -  8) as *mut u64, 0);
+        }
 
         // ensure we've accounted for all space
         assert_eq!(

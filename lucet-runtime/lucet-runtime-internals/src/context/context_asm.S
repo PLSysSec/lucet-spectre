@@ -50,6 +50,18 @@ _lucet_context_bootstrap:
     pop %rsi
     pop %rdi
 
+    // setup shadow stack
+    // curr_top = *top_ptr
+    mov -0x1020(%r15), %rax
+    // curr_top-=8
+    sub $0x8, %rax
+    // *top_ptr = curr_top
+    mov %rax, -0x1020(%r15)
+    // target = call + x
+    lea rettarget(%rip), %r11
+    // *curr_top = target
+    mov %r11, (%rax)
+
     /* the next thing on the stack is the guest function - return to it */
     //ret
     pop %r11
@@ -57,6 +69,7 @@ _lucet_context_bootstrap:
     push %r11
     // call guest ptr
     call *%r11
+rettarget:
     //undo align
     pop %r11
     // go to backstop
