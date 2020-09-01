@@ -40,6 +40,7 @@ SFI_FULL_FLAGS:=--spectre-mitigation=sfi
 CET_FULL_FLAGS:=--spectre-mitigation=cet
 SFI_ASLR_FLAGS:=--spectre-mitigation=sfiaslr
 CET_ASLR_FLAGS:=--spectre-mitigation=cetaslr
+CET_ONLY_FLAGS:=--spectre-mitigation=cetonly
 BLADE_FLAGS:=--spectre-pht-mitigation=blade
 PHTTOBTB_FLAGS:=--spectre-pht-mitigation=phttobtb
 INTERLOCK_FLAGS:=--spectre-pht-mitigation=interlock
@@ -126,6 +127,21 @@ run_pht:
 	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py $(LUCET_ROOT)/../benchmarks/current_sightglass_pht/sightglass_results.csv
 	mv $(LUCET_ROOT)/../benchmarks/current_sightglass_pht $(LUCET_ROOT)/../benchmarks/sightglass_pht_$(shell date --iso=seconds)
 
+run_cetonly:
+	-rm -rf $(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only
+	mkdir $(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only
+
+	$(LUCET_BIN)/sightglass -c cet_only_nocet.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only/cet_only_nocet-latest.csv
+	$(CET_LUCET_BIN)/sightglass -c cet_only.toml $(SIGHTGLASS_ARGS)
+	mv /tmp/sightglass_results.csv $(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only/cet_only-latest.csv
+
+	python3 $(LUCET_ROOT)/../sfi-spectre-testing/scripts/graph_sightglass.py --usePercent \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only/cet_only_nocet-latest.csv \
+		$(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only/cet_only-latest.csv
+
+	mv $(LUCET_ROOT)/../benchmarks/current_sightglass_cet_only $(LUCET_ROOT)/../benchmarks/sightglass_cet_only_$(shell date --iso=seconds)
+
 
 .PHONY: build
 build: $(LUCETC)
@@ -154,6 +170,9 @@ build: build/sfi_aslr/module.so
 
 build: build/cet_aslr/implementation.so
 build: build/cet_aslr/module.so
+
+build: build/cet_only/implementation.so
+build: build/cet_only/module.so
 
 build: build/blade/implementation.so
 build: build/blade/module.so
@@ -281,6 +300,14 @@ build/cet_aslr/%.o: %.c
 		-DWASM_MODULE=$(abspath build/cet_aslr/module.so) \
 		-DUSE_MPK=1 \
 		-c $^ -o $@
+build/cet_only/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) $(CET_CFLAGS) \
+		-fvisibility=default \
+		-I$(LUCET_RUNTIME)/include \
+		-I$(LUCET_WASI)/include \
+		-DWASM_MODULE=$(abspath build/cet_only/module.so) \
+		-c $^ -o $@
 build/blade/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) --std=c99 -fPIC -D_GNU_SOURCE -g3 $(COMMON_CFLAGS) \
@@ -386,6 +413,16 @@ build/cet_aslr/implementation.so: build/cet_aslr/hostcalls.o
 		-Wl,-rpath $(CET_LUCET_BIN) \
 		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
 
+build/cet_only/implementation.so: $(LUCET_BIN)/liblucet_unified.a
+build/cet_only/implementation.so: build/cet_only/wrapper.o
+build/cet_only/implementation.so: build/cet_only/hostcalls.o
+	@mkdir -p $(@D)
+	$(CXX) -rdynamic -shared $(CET_CFLAGS) $(CET_LINKERFLAGS) \
+		build/cet_only/wrapper.o build/cet_only/hostcalls.o \
+		-L $(CET_LUCET_BIN) \
+		-Wl,-rpath $(CET_LUCET_BIN) \
+		 -Wl,--whole-archive -l:liblucet_unified.a  -Wl,--no-whole-archive -ldl -lrt -o $@
+
 build/blade/implementation.so: $(LUCET_BIN)/liblucet_unified.a
 build/blade/implementation.so: build/blade/wrapper.o
 build/blade/implementation.so: build/blade/hostcalls.o
@@ -476,6 +513,14 @@ build/cet_aslr/module.so: build/lucet/module.wasm
 		--bindings=bindings.json \
 		--bindings=$(LUCET_WASI)/bindings.json \
 		$(CET_ASLR_FLAGS) \
+		$< -o $@
+
+build/cet_only/module.so: build/lucet/module.wasm
+	@mkdir -p $(@D)
+	$(LUCETC) $(LUCETC_FLAGS) --emit=so \
+		--bindings=bindings.json \
+		--bindings=$(LUCET_WASI)/bindings.json \
+		$(CET_ONLY_FLAGS) \
 		$< -o $@
 
 build/blade/module.so: build/lucet_unroll/module.wasm

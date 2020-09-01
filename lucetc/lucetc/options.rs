@@ -135,6 +135,7 @@ arg_enum! {
         CET,
         SFIASLR,
         CETASLR,
+        CETONLY,
     }
 }
 
@@ -160,6 +161,7 @@ impl Into<cranelift_spectre::settings::SpectreMitigation> for SpectreMitigation 
             SpectreMitigation::CET => cranelift_spectre::settings::SpectreMitigation::CET,
             SpectreMitigation::SFIASLR => cranelift_spectre::settings::SpectreMitigation::SFIASLR,
             SpectreMitigation::CETASLR => cranelift_spectre::settings::SpectreMitigation::CETASLR,
+            SpectreMitigation::CETONLY => cranelift_spectre::settings::SpectreMitigation::CETONLY,
         }
     }
 }
@@ -526,7 +528,7 @@ SSE3 but not AVX:
                 Arg::with_name("spectre_mitigation")
                     .long("--spectre-mitigation")
                     .takes_value(true)
-                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman (lfence at all control flow targets), sfi, cet, sfiaslr, cetaslr."),
+                    .help("What scheme to use to protect from spectre attacks: none, loadlfence (lfence after all loads), strawman (lfence at all control flow targets), sfi, cet, sfiaslr, cetaslr. Also includes cetonly (this is not a spectre defence, this just enabled cet only on the produced binary)"),
             )
             .arg(
                 Arg::with_name("spectre_stop_sbx_breakout")

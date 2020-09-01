@@ -357,7 +357,7 @@ impl<'a> Compiler<'a> {
 
             let mitigation = get_spectre_mitigation();
             // value for can_be_indirectly_called is needed only for cet
-            if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR {
+            if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR || mitigation == SpectreMitigation::CETONLY {
                 let func_name = func.name.symbol();
                 if func_name == "guest_func__start" {
                     can_be_indirectly_called = true;

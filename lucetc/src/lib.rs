@@ -421,7 +421,7 @@ flags for generating shared libraries.",
     .into();
 
     let mitigation = get_spectre_mitigation();
-    if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR {
+    if mitigation == SpectreMitigation::CET || mitigation == SpectreMitigation::CETASLR || mitigation == SpectreMitigation::CETONLY {
         ret = ret + " -z ibt -z shstk";
     }
 
