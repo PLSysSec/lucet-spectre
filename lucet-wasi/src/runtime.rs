@@ -430,4 +430,16 @@ impl<'a> wasi_snapshot_preview1::WasiSnapshotPreview1 for LucetWasiCtx<'a> {
     fn sock_shutdown(&self, _fd: types::Fd, _how: types::Sdflags) -> Result<(), types::Errno> {
         Err(types::Errno::Inval)
     }
+
+    fn fence(&self) -> Result<(), types::Errno> {
+        with_mpk(self, |self_| {
+            self_.wasi().fence()
+        })
+    }
+
+    fn clflush(&self, addr: &GuestPtr<'_, u8>) -> Result<(), types::Errno> {
+        with_mpk(self, |self_| {
+            self_.wasi().clflush(addr)
+        })
+    }
 }
