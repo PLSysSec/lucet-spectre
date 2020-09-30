@@ -442,4 +442,10 @@ impl<'a> wasi_snapshot_preview1::WasiSnapshotPreview1 for LucetWasiCtx<'a> {
             self_.wasi().clflush(addr)
         })
     }
+
+    fn rdtsc(&self) -> Result<u64, types::Errno> {
+        with_mpk(self, |self_| {
+            self_.wasi().rdtsc()
+        })
+    }
 }
