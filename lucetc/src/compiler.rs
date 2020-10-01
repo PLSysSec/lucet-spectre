@@ -330,7 +330,11 @@ impl<'a> Compiler<'a> {
         let mut function_manifest_bytes = Cursor::new(Vec::new());
         let mut function_map: HashMap<FuncId, (u32, DataId, usize)> = HashMap::new();
 
-        let indirect_functions = &self.decls.info.table_elems[&TableIndex::from_u32(0)];
+        let mut indirect_functions = None;
+
+        if self.decls.info.table_elems.len() > 0 {
+            indirect_functions = Some(&self.decls.info.table_elems[&TableIndex::from_u32(0)]);
+        }
         // Reserving the first 16 values
         let mut cfi_start_num: u64 = 16;
 
@@ -364,12 +368,14 @@ impl<'a> Compiler<'a> {
                 } else {
                     let curr_func_unique_id = self.get_unique_func_index(func_name);
 
-                    'outer: for indirect_function in indirect_functions {
-                        let entries = &indirect_function.elements;
-                        for unique_func_index in entries.iter() {
-                            if curr_func_unique_id == *unique_func_index {
-                                can_be_indirectly_called = true;
-                                break 'outer;
+                    if indirect_functions.is_some() {
+                        'outer: for indirect_function in indirect_functions.unwrap() {
+                            let entries = &indirect_function.elements;
+                            for unique_func_index in entries.iter() {
+                                if curr_func_unique_id == *unique_func_index {
+                                    can_be_indirectly_called = true;
+                                    break 'outer;
+                                }
                             }
                         }
                     }
