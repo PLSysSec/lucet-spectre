@@ -448,4 +448,10 @@ impl<'a> wasi_snapshot_preview1::WasiSnapshotPreview1 for LucetWasiCtx<'a> {
             self_.wasi().rdtsc()
         })
     }
+
+    fn get_host_stack_ptr(&self) -> Result<u64, types::Errno> {
+        with_mpk(self, |self_| {
+            self_.wasi().get_host_stack_ptr()
+        })
+    }
 }
