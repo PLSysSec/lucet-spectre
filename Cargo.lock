@@ -1347,9 +1347,9 @@ checksum = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
 
 [[package]]
 name = "precision"
-version = "0.1.11"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d800f775685df7c29c60971217bcfb908bd98c807ce8346cba9fe77df9a9dcc"
+checksum = "83f0b3de90e9edd6382604f4f28509ce25272deb065b94045fc47abcde567d55"
 dependencies = [
  "cc",
  "libc",
