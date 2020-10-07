@@ -437,9 +437,15 @@ impl<'a> wasi_snapshot_preview1::WasiSnapshotPreview1 for LucetWasiCtx<'a> {
         })
     }
 
-    fn clflush(&self, addr: &GuestPtr<'_, u8>) -> Result<(), types::Errno> {
+    fn clflush_guestaddr(&self, addr: &GuestPtr<'_, u8>) -> Result<(), types::Errno> {
         with_mpk(self, |self_| {
-            self_.wasi().clflush(addr)
+            self_.wasi().clflush_guestaddr(addr)
+        })
+    }
+
+    fn clflush_hostaddr(&self, addr: u64) -> Result<(), types::Errno> {
+        with_mpk(self, |self_| {
+            self_.wasi().clflush_hostaddr(addr)
         })
     }
 
