@@ -249,5 +249,24 @@
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false
         },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "crash_wat",
+            "program": "${workspaceFolder}/target/debug/lucetc",
+            "args": [
+                "--bindings", "./lucet-wasi/bindings.json",
+                "--guard-size", "4GiB",
+                "--min-reserved-size", "4GiB",
+                "--max-reserved-size", "4GiB",
+                "/home/shr/Downloads/btb.wasm",
+                "-o", "/tmp/btb.so",
+            ],
+            "env": {
+                "RUST_BACKTRACE" : "1"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        },
     ]
 }
