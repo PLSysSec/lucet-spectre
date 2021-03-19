@@ -264,6 +264,9 @@ pub struct Instance {
     /// The value passed back to the guest when resuming a yielded instance.
     pub(crate) resumed_val: Option<Box<dyn Any + 'static>>,
 
+    /// Always zero. Used for spectre resistance
+    pub zero: u64,
+
     /// `_padding` must be the last member of the structure.
     /// This marks where the padding starts to make the structure exactly 4096 bytes long.
     /// It is also used to compute the size of the structure up to that point, i.e. without padding.
@@ -922,6 +925,7 @@ impl Instance {
             ensure_sigstack_installed: true,
             entrypoint: None,
             resumed_val: None,
+            zero: 0,
             _padding: (),
         };
         inst.set_globals_ptr(globals_ptr);
@@ -931,6 +935,11 @@ impl Instance {
         let unpadded_size = offset_of!(Instance, _padding);
         assert!(unpadded_size <= HOST_PAGE_SIZE_EXPECTED - mem::size_of::<*mut i64>());
         inst
+    }
+
+    pub fn offset_of_zero_field() -> usize {
+        let o = offset_of!(Instance, zero);
+        return o;
     }
 
     // The globals pointer must be stored right before the end of the structure, padded to the page size,
