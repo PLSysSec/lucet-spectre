@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.fst": "ocaml",
+        "*.fsti": "ocaml",
+        "hfi.h": "c"
+    }
+}
